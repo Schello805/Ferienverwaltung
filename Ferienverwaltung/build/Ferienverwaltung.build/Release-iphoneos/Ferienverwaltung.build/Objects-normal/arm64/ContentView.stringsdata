@@ -1,0 +1,192 @@
+{
+  "source": "/Users/michaelschellenberger/Library/Mobile Documents/com~apple~CloudDocs/Progammierung/Ferienverwaltung/Ferienverwaltung/Ferienverwaltung/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld unbetreut",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "Betreut",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 73
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ - %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tagesübersicht",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 232
+        }
+      },
+      {
+        "comment": "",
+        "key": "Zeitraum:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 164
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ - %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 166
+        }
+      },
+      {
+        "comment": "",
+        "key": "Gesamttage:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 170
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 172
+        }
+      },
+      {
+        "comment": "",
+        "key": "Betreute Tage:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 176
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Unbetreute Tage:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 183
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 185
+        }
+      },
+      {
+        "comment": "",
+        "key": "Betreuungsstatus:",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 192
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 206
+        }
+      },
+      {
+        "comment": "",
+        "key": "Betreuung für unbetreute Tage planen",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 224
+        }
+      },
+      {
+        "comment": "",
+        "key": "Unbetreut",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 247
+        }
+      },
+      {
+        "comment": "",
+        "key": "Betreut",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 254
+        }
+      },
+      {
+        "comment": "",
+        "key": "Dashboard",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 282
+        }
+      },
+      {
+        "comment": "",
+        "key": "Familie",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 287
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ferien",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 292
+        }
+      },
+      {
+        "comment": "",
+        "key": "Einstellungen",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 297
+        }
+      },
+      {
+        "comment": "",
+        "key": "Kalenderübersicht",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 309
+        }
+      }
+    ]
+  },
+  "version": 1
+}

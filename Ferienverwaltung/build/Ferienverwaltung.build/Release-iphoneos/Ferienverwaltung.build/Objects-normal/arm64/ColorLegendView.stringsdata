@@ -1,0 +1,32 @@
+{
+  "source": "/Users/michaelschellenberger/Library/Mobile Documents/com~apple~CloudDocs/Progammierung/Ferienverwaltung/Ferienverwaltung/Ferienverwaltung/Views/ColorLegendView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Ferientag ohne Betreuung",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ferientag mit Betreuung",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 15
+        }
+      },
+      {
+        "comment": "",
+        "key": "Regulärer Betreuungstag",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 16
+        }
+      }
+    ]
+  },
+  "version": 1
+}

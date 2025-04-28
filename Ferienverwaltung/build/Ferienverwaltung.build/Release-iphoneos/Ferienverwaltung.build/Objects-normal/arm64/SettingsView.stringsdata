@@ -1,0 +1,224 @@
+{
+  "source": "/Users/michaelschellenberger/Library/Mobile Documents/com~apple~CloudDocs/Progammierung/Ferienverwaltung/Ferienverwaltung/Ferienverwaltung/Views/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Einstellungen",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 82
+        }
+      },
+      {
+        "comment": "",
+        "key": "Alle Daten wirklich löschen?",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 84
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lade Daten...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 119
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bundesland wählen",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 18
+        }
+      },
+      {
+        "comment": "",
+        "key": "App-Einstellungen",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 30
+        }
+      },
+      {
+        "comment": "",
+        "key": "Benachrichtigungen",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 40
+        }
+      },
+      {
+        "comment": "",
+        "key": "Du erhältst Push-Benachrichtigungen 4 Wochen und 1 Woche vor jedem unbetreuten Ferientag. So kannst du rechtzeitig Betreuung organisieren. Über den Test-Button kannst du eine Beispiel-Benachrichtigung auslösen.",
+        "location": {
+          "startingColumn": 74,
+          "startingLine": 40
+        }
+      },
+      {
+        "comment": "",
+        "key": "Farben der Kalender-Legende",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 54
+        }
+      },
+      {
+        "comment": "",
+        "key": "Info & Dokumentation",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 68
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bundesland",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 19
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abgelaufene Daten ausblenden",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Alle Daten zurücksetzen",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 35
+        }
+      },
+      {
+        "comment": "",
+        "key": "Test-Benachrichtigung senden",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ferientag ohne Betreuung",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ferientag mit Betreuung",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 59
+        }
+      },
+      {
+        "comment": "",
+        "key": "Betreuungstag",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Über diese App",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "Feedback geben",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 77
+        }
+      },
+      {
+        "comment": "",
+        "key": "Löschen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 85
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 88
+        }
+      },
+      {
+        "comment": "",
+        "key": "Alle gespeicherten Daten werden unwiderruflich entfernt.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 90
+        }
+      },
+      {
+        "comment": "",
+        "key": "Push-Benachrichtigungen für unbetreute Ferientage",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "Elternverwaltung",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Eltern hinzufügen",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 165
+        }
+      },
+      {
+        "comment": "",
+        "key": "Elternliste",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 188
+        }
+      },
+      {
+        "comment": "",
+        "key": "Name",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "Beziehung",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 168
+        }
+      }
+    ]
+  },
+  "version": 1
+}

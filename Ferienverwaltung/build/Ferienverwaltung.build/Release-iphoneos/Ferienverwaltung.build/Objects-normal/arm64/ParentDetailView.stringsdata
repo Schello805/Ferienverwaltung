@@ -1,0 +1,112 @@
+{
+  "source": "/Users/michaelschellenberger/Library/Mobile Documents/com~apple~CloudDocs/Progammierung/Ferienverwaltung/Ferienverwaltung/Ferienverwaltung/Views/ParentDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Details",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 140
+        }
+      },
+      {
+        "comment": "",
+        "key": "Wöchentlich freie Tage (z.B. Homeoffice, feste Betreuung):",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 71
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keine wöchentlichen freien Tage hinterlegt.",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaubszeiträume: %lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 92
+        }
+      },
+      {
+        "comment": "",
+        "key": "Noch keine Urlaubszeiträume eingetragen.",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 120
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ – %@",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaubszeitraum hinzufügen",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 132
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaubszeitraum hinzufügen",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bitte wähle Start- und Enddatum für den Urlaub aus.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "Hinzufügen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 195
+        }
+      },
+      {
+        "comment": "",
+        "key": "Von",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bis",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 175
+        }
+      }
+    ]
+  },
+  "version": 1
+}

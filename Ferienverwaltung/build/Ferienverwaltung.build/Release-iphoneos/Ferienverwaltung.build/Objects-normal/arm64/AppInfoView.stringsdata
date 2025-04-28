@@ -1,0 +1,104 @@
+{
+  "source": "/Users/michaelschellenberger/Library/Mobile Documents/com~apple~CloudDocs/Progammierung/Ferienverwaltung/Ferienverwaltung/Ferienverwaltung/Views/AppInfoView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Über diese App",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ferienverwaltung",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "Version 1.0.0",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "Diese App hilft Eltern, Schulferien, Feiertage und Urlaubsplanung für alle Bundesländer Deutschlands übersichtlich zu verwalten.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 17
+        }
+      },
+      {
+        "comment": "",
+        "key": "Komplette Datenschutzerklärung lesen",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Dokumentation",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 23
+        }
+      },
+      {
+        "comment": "",
+        "key": "README (Kurzfassung):",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 25
+        }
+      },
+      {
+        "comment": "",
+        "key": "# Ferienverwaltung (Vacation Management)\n\nEine moderne iOS-App zur Verwaltung von Schulferien, Feiertagen und Elternurlaub in Deutschland.\n\n## Features\n- Übersicht aller schulfreien Tage (Ferien + relevante Feiertage) pro Jahr\n- Verwaltung von Eltern und Urlaubstagen\n- Anzeige unbetreuter Ferientage & Push-Benachrichtigungen\n- Auswahl Bundesland, Speicherung lokal",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 28
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lizenz",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Copyright 2025 Michael Schellenberger. Alle Rechte vorbehalten. Keine Weitergabe oder Nutzung ohne Genehmigung. Siehe LICENSE.md für Details.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "Datenschutz",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 50
+        }
+      },
+      {
+        "comment": "",
+        "key": "Alle Daten werden ausschließlich lokal gespeichert. Es werden keine personenbezogenen Daten an Server übermittelt. Details siehe Datenschutzerklärung (PRIVACY_POLICY.md).",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 52
+        }
+      }
+    ]
+  },
+  "version": 1
+}

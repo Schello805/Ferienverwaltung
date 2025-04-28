@@ -1,0 +1,200 @@
+{
+  "source": "/Users/michaelschellenberger/Library/Mobile Documents/com~apple~CloudDocs/Progammierung/Ferienverwaltung/Ferienverwaltung/Ferienverwaltung/Views/ParentCalendarView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%@'s Urlaub",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 91
+        }
+      },
+      {
+        "comment": "",
+        "key": "Zusammenfassung",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaubszeitraum hinzufügen",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaubszeiträume %@",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 39
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld Tage",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "bis %@",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bearbeiten",
+        "location": {
+          "startingColumn": 47,
+          "startingLine": 61
+        }
+      },
+      {
+        "comment": "",
+        "key": "Löschen",
+        "location": {
+          "startingColumn": 47,
+          "startingLine": 68
+        }
+      },
+      {
+        "comment": "",
+        "key": "Gesamt: %lld Urlaubstage",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@: %lld Urlaubstage",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 82
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaub hinzufügen",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "Hinzufügen",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 103
+        }
+      },
+      {
+        "comment": "",
+        "key": "Von",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bis",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaub bearbeiten",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 117
+        }
+      },
+      {
+        "comment": "",
+        "key": "Abbrechen",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 119
+        }
+      },
+      {
+        "comment": "",
+        "key": "Speichern",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 122
+        }
+      },
+      {
+        "comment": "",
+        "key": "Von",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 114
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bis",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 115
+        }
+      },
+      {
+        "comment": "",
+        "key": "Urlaub löschen",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 142
+        }
+      },
+      {
+        "comment": "",
+        "key": "Möchtest du diesen Urlaubszeitraum wirklich löschen?",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 143
+        }
+      },
+      {
+        "comment": "",
+        "key": "Löschen",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 144
+        }
+      }
+    ]
+  },
+  "version": 1
+}
