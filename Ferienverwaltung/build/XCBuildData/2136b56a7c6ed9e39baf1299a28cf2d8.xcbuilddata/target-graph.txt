@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'Ferienverwaltung' in project 'Ferienverwaltung' (no dependencies)
