@@ -34,10 +34,6 @@ struct VacationView: View {
         .edgesIgnoringSafeArea(.top)
     }
 
-    private var parentsToShow: [Parent] {
-        viewModel.hideExpiredData ? viewModel.filteredParents : viewModel.parents
-    }
-
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .long

@@ -31,20 +31,18 @@ struct FerienverwaltungExport: Codable {
     var schoolHolidays: [SchoolHoliday]
     var publicHolidays: [SchoolHoliday]
     var children: [Child]
-    var hideExpiredData: Bool
 
     // Custom CodingKeys for FederalState as String
     enum CodingKeys: String, CodingKey {
-        case parents, selectedState, schoolHolidays, publicHolidays, children, hideExpiredData
+        case parents, selectedState, schoolHolidays, publicHolidays, children
     }
 
-    init(parents: [Parent], selectedState: FederalState, schoolHolidays: [SchoolHoliday], publicHolidays: [SchoolHoliday], children: [Child], hideExpiredData: Bool) {
+    init(parents: [Parent], selectedState: FederalState, schoolHolidays: [SchoolHoliday], publicHolidays: [SchoolHoliday], children: [Child]) {
         self.parents = parents
         self.selectedState = selectedState.rawValue
         self.schoolHolidays = schoolHolidays
         self.publicHolidays = publicHolidays
         self.children = children
-        self.hideExpiredData = hideExpiredData
     }
 
     init(from decoder: Decoder) throws {
@@ -55,7 +53,6 @@ struct FerienverwaltungExport: Codable {
         schoolHolidays = try container.decode([SchoolHoliday].self, forKey: .schoolHolidays)
         publicHolidays = try container.decode([SchoolHoliday].self, forKey: .publicHolidays)
         children = try container.decode([Child].self, forKey: .children)
-        hideExpiredData = try container.decode(Bool.self, forKey: .hideExpiredData)
     }
 
     func federalState() -> FederalState {
@@ -88,7 +85,6 @@ class VacationViewModel: ObservableObject {
             StorageService.shared.saveChildren(children)
         }
     }
-    @Published var hideExpiredData: Bool = false
 
     private let holidayService = SchoolHolidayService.shared
     
@@ -273,7 +269,6 @@ class VacationViewModel: ObservableObject {
     
     // Gefilterte Eltern mit nur aktuellen Urlaubstagen
     var filteredParents: [Parent] {
-        guard hideExpiredData else { return parents }
         let today = Calendar.current.startOfDay(for: Date())
         return parents.map { parent in
             var filteredParent = parent
@@ -579,7 +574,7 @@ class VacationViewModel: ObservableObject {
     
     // MARK: - Export/Import
     func exportAllDataAsJSON() -> Data? {
-        let exportStruct = FerienverwaltungExport(parents: parents, selectedState: selectedState, schoolHolidays: schoolHolidays, publicHolidays: publicHolidays, children: children, hideExpiredData: hideExpiredData)
+        let exportStruct = FerienverwaltungExport(parents: parents, selectedState: selectedState, schoolHolidays: schoolHolidays, publicHolidays: publicHolidays, children: children)
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         encoder.dateEncodingStrategy = .iso8601
@@ -601,7 +596,6 @@ class VacationViewModel: ObservableObject {
             self.schoolHolidays = importStruct.schoolHolidays
             self.publicHolidays = importStruct.publicHolidays
             self.children = importStruct.children
-            self.hideExpiredData = importStruct.hideExpiredData
         } catch {
             print("[Import] Fehler beim Dekodieren: \(error)")
         }

@@ -44,8 +44,7 @@ struct SettingsView: View {
                     } label: {
                         Label("Alle Daten zurücksetzen", systemImage: "trash")
                     }
-                    // Daten ausblenden: Abgelaufene Urlaube und Ferien nicht anzeigen
-                    Toggle("Abgelaufene Daten ausblenden", isOn: $viewModel.hideExpiredData)
+                    
                 }
                 Section(header: Text("Benachrichtigungen"), footer: Text("Du erhältst Push-Benachrichtigungen 4 Wochen und 1 Woche vor jedem unbetreuten Ferientag. So kannst du rechtzeitig Betreuung organisieren. Über den Test-Button kannst du eine Beispiel-Benachrichtigung auslösen.")) {
                     NotificationToggle(notificationsEnabled: $notificationsEnabled, viewModel: viewModel, onError: { msg in
