@@ -10,12 +10,12 @@ struct HolidayName: Codable, Equatable {
     let text: String
 }
 
-struct Subdivision: Codable {
+struct Subdivision: Codable, Equatable {
     let code: String
     let shortName: String
 }
 
-struct SchoolHoliday: Codable, Identifiable {
+struct SchoolHoliday: Codable, Identifiable, Equatable {
     let id: String
     let startDate: String
     let endDate: String
@@ -44,6 +44,18 @@ struct SchoolHoliday: Codable, Identifiable {
     
     var endDateObject: Date? {
         DateFormatter.apiDateFormatter.date(from: endDate)
+    }
+    
+    static func == (lhs: SchoolHoliday, rhs: SchoolHoliday) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.startDate == rhs.startDate &&
+        lhs.endDate == rhs.endDate &&
+        lhs.type == rhs.type &&
+        lhs.name == rhs.name &&
+        lhs.regionalScope == rhs.regionalScope &&
+        lhs.temporalScope == rhs.temporalScope &&
+        lhs.nationwide == rhs.nationwide &&
+        lhs.subdivisions == rhs.subdivisions
     }
 }
 

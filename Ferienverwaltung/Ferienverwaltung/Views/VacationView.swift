@@ -206,13 +206,13 @@ struct VacationView: View {
     }
 
     private var adultsSection: some View {
-        Section(header: sectionHeaderErwachsene) {
+        Section(header: Text("Erwachsene")) {
             ForEach(viewModel.parents, id: \.id) { parent in
                 NavigationLink(destination: ParentDetailView(viewModel: viewModel, parent: parent)) {
                     HStack(spacing: 16) {
                         ZStack {
                             Circle()
-                                .stroke(Color(hex: parent.colorHex), lineWidth: 3)
+                                .stroke(Color.fromHex(parent.colorHex), lineWidth: 3)
                                 .frame(width: 48, height: 48)
                             if let data = parent.profileImageData, let img = UIImage(data: data) {
                                 Image(uiImage: img)
@@ -222,7 +222,7 @@ struct VacationView: View {
                                     .clipShape(Circle())
                             } else {
                                 Circle()
-                                    .fill(Color(hex: parent.colorHex))
+                                    .fill(Color.fromHex(parent.colorHex))
                                     .frame(width: 44, height: 44)
                                 Text(String(parent.name.prefix(1)))
                                     .font(.title2)
@@ -235,9 +235,7 @@ struct VacationView: View {
                             Text(parent.relationship.rawValue)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("Urlaubstage: \(parent.vacationDays.count)")
-                                .font(.caption2)
-                                .foregroundColor(.gray)
+                            // Urlaubstage-Anzeige entfernt, da nur Zeiträume für den User sichtbar sein sollen
                         }
                         Spacer()
                     }
@@ -255,13 +253,6 @@ struct VacationView: View {
             Button(action: { showAddParentSheet = true }) {
                 Label("Erwachsenen hinzufügen", systemImage: "plus")
             }
-        }
-    }
-
-    private var sectionHeaderErwachsene: some View {
-        HStack {
-            Text("Erwachsene")
-                .font(.headline)
         }
     }
 

@@ -169,10 +169,21 @@ struct VacationRangePicker: View {
     var onSave: (Date, Date) -> Void
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: VacationViewModel
-    @State private var startDate: Date = Date()
-    @State private var endDate: Date = Date().addingTimeInterval(60*60*24)
+    var initialStartDate: Date = Date()
+    var initialEndDate: Date = Date()
+    @State private var startDate: Date
+    @State private var endDate: Date
     @State private var selectingStart = true
     @State private var fixedWeekdays: [Int] = []
+
+    init(onSave: @escaping (Date, Date) -> Void, viewModel: VacationViewModel, initialStartDate: Date = Date(), initialEndDate: Date = Date()) {
+        self.onSave = onSave
+        self.viewModel = viewModel
+        self.initialStartDate = initialStartDate
+        self.initialEndDate = initialEndDate
+        _startDate = State(initialValue: initialStartDate)
+        _endDate = State(initialValue: initialEndDate)
+    }
 
     var body: some View {
         NavigationView {
@@ -344,11 +355,11 @@ struct CalendarGridRangeView: View {
                             let date = days[idx - weekdayOffset]
                             ZStack {
                                 if isHoliday(date) && !isCareDay(date) {
-                                    RoundedRectangle(cornerRadius: 4).fill(Color(hex: colorUnattendedHex))
+                                    RoundedRectangle(cornerRadius: 4).fill(Color.fromHex(colorUnattendedHex))
                                 } else if isHoliday(date) {
-                                    RoundedRectangle(cornerRadius: 4).fill(Color(hex: colorAttendedHex))
+                                    RoundedRectangle(cornerRadius: 4).fill(Color.fromHex(colorAttendedHex))
                                 } else if isCareDay(date) {
-                                    RoundedRectangle(cornerRadius: 4).fill(Color(hex: colorCareHex))
+                                    RoundedRectangle(cornerRadius: 4).fill(Color.fromHex(colorCareHex))
                                 } else {
                                     Color.clear
                                 }

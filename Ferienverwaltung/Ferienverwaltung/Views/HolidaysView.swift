@@ -58,7 +58,7 @@ struct HolidaysView: View {
                         }
                     } else {
                         // Jahr-Gruppierung aller relevanten Feiertage (nicht in Ferien)
-                        let holidaysToGroup = viewModel.hideExpiredData ? viewModel.filteredPublicHolidays : viewModel.publicHolidays
+                        let holidaysToGroup = viewModel.publicHolidays
                         let grouped = Dictionary(grouping: holidaysToGroup) { holiday in
                             Calendar.current.component(.year, from: holiday.startDateObject ?? Date())
                         }.sorted(by: { $0.key < $1.key })
@@ -67,34 +67,44 @@ struct HolidaysView: View {
                                 .foregroundColor(.secondary)
                                 .padding()
                         } else {
-                            ForEach(grouped, id: \ .key) { year, holidays in
-                                // Berechne die Gesamtzahl der Feiertage (ohne Wochenenden, aber mit ggf. mehreren Feiertagen an Werktagen)
-                                let totalPublicHolidays = holidays.reduce(0) { sum, holiday in
-                                    if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                        return sum + countPublicHolidayWeekdays(start: start, end: end)
-                                    } else {
-                                        return sum
-                                    }
+                            Section(header:
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Feiertage")
+                                    Text("(Regionale Feiertage werden nicht für die Werktagsberechnung berücksichtigt)")
+                                        .font(.caption2)
+                                        .foregroundColor(.orange)
                                 }
-                                Section(header:
-                                    HStack {
-                                        Text("Feiertage \(String(format: "%04d", year))")
-                                        Spacer()
-                                        Text("Gesamt: \(totalPublicHolidays) Tage")
-                                            .font(.caption)
-                                            .foregroundColor(.blue)
+                                .padding(.bottom, 4)
+                            ) {
+                                ForEach(grouped, id: \ .key) { year, holidays in
+                                    // Berechne die Gesamtzahl der Feiertage (ohne Wochenenden, aber mit ggf. mehreren Feiertagen an Werktagen)
+                                    let totalPublicHolidays = holidays.reduce(0) { sum, holiday in
+                                        if let start = holiday.startDateObject, let end = holiday.endDateObject {
+                                            return sum + countPublicHolidayWeekdays(start: start, end: end)
+                                        } else {
+                                            return sum
+                                        }
                                     }
-                                ) {
-                                    ForEach(holidays) { holiday in
-                                        VStack(alignment: .leading) {
-                                            Text(holiday.holidayName)
-                                                .font(.headline)
-                                            if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                                Text("\(formatDate(start)) bis \(formatDate(end))")
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.secondary)
+                                    Section(header:
+                                        HStack {
+                                            Text("Feiertage \(String(format: "%04d", year))")
+                                            Spacer()
+                                            Text("Gesamt: \(totalPublicHolidays) Tage")
+                                                .font(.caption)
+                                                .foregroundColor(.blue)
+                                        }
+                                    ) {
+                                        ForEach(holidays) { holiday in
+                                            VStack(alignment: .leading) {
+                                                Text(holiday.holidayName)
+                                                    .font(.headline)
+                                                if let start = holiday.startDateObject, let end = holiday.endDateObject {
+                                                    Text("\(formatDate(start)) bis \(formatDate(end))")
+                                                        .font(.subheadline)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                HolidayScopeInfoView(holiday: holiday)
                                             }
-                                            HolidayScopeInfoView(holiday: holiday)
                                         }
                                     }
                                 }

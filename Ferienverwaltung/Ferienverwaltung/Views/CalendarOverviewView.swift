@@ -40,7 +40,8 @@ struct CalendarOverviewView: View {
                                     year: selectedYear,
                                     month: month,
                                     isHoliday: isHoliday,
-                                    isAttendedHoliday: isAttendedHoliday
+                                    isAttendedHoliday: isAttendedHoliday,
+                                    viewModel: viewModel
                                 )
                             }
                         }
@@ -67,23 +68,38 @@ struct CalendarOverviewView: View {
         return [current - 1, current, current + 1]
     }
     
+    /// Ein Tag ist ein "Ferientag ohne Betreuung" wenn Schulferien sind und KEIN Elternteil Urlaub hat, oder wenn ein Kind einen freien Tag hat und KEIN Elternteil Urlaub hat.
     func isHoliday(_ date: Date) -> Bool {
-        viewModel.schoolHolidays.contains { h in
+        let isSchoolHoliday = viewModel.schoolHolidays.contains { h in
             guard let start = h.startDateObject, let end = h.endDateObject else { return false }
             return (start...end).contains(date)
         }
+        let isChildFree = isChildFreeDay(date)
+        let isAttended = isAttendedHoliday(date)
+        // Wenn Schulferien ODER Kind-freier Tag, aber kein Elternteil Urlaub hat
+        return (isSchoolHoliday || isChildFree) && !isAttended
     }
     
-    /// Prüft, ob der Tag ein betreuter Ferientag ist (mind. ein Elternteil hat Urlaub an diesem Ferientag oder einen regelmäßigen freien Tag)
+    /// Prüft, ob der Tag ein "Ferientag mit Betreuung" ist (mind. ein Elternteil hat Urlaub an diesem Ferientag oder an einem freien Kindertag)
     func isAttendedHoliday(_ date: Date) -> Bool {
-        guard isHoliday(date) else { return false }
         let normalizedDate = Calendar.current.startOfDay(for: date)
         let weekday = Calendar.current.component(.weekday, from: normalizedDate) // 1=Sonntag ... 7=Samstag
         let weekdayZeroBased = (weekday + 5) % 7 // 0=Montag ... 6=Sonntag
+        // Eltern haben Urlaub ODER festen freien Tag
         return viewModel.parents.contains { parent in
             parent.vacationDays.contains { vac in
                 Calendar.current.isDate(Calendar.current.startOfDay(for: vac.date), inSameDayAs: normalizedDate)
             } || parent.fixedWeekdays.contains(weekdayZeroBased)
+        }
+    }
+    
+    /// Prüft, ob an diesem Tag mindestens ein Kind einen zusätzlichen freien Tag hat
+    func isChildFreeDay(_ date: Date) -> Bool {
+        let normalizedDate = Calendar.current.startOfDay(for: date)
+        return viewModel.children.contains { child in
+            child.freeDays.contains { freeDay in
+                Calendar.current.isDate(Calendar.current.startOfDay(for: freeDay.date), inSameDayAs: normalizedDate)
+            }
         }
     }
     
@@ -100,9 +116,10 @@ struct CalendarGridView: View {
     let month: Int
     let isHoliday: (Date) -> Bool
     let isAttendedHoliday: (Date) -> Bool
-    
+    @ObservedObject var viewModel: VacationViewModel
     @AppStorage("legendColorUnattended") private var colorUnattendedHex: String = "#B0B0B0"
     @AppStorage("legendColorAttended") private var colorAttendedHex: String = "#FFA500"
+    @AppStorage("legendColorPublicHoliday") private var colorPublicHolidayHex: String = "#FF3B30"
     
     var body: some View {
         let calendar = Calendar.current
@@ -122,22 +139,27 @@ struct CalendarGridView: View {
                     .id("placeholder-\(idx)")
             }
             ForEach(days, id: \.self) { date in
+                let isPH = isPublicHoliday(date)
+                let relevant = isSchoolHoliday(date) || parentIsChildFreeDay(date: date)
                 ZStack {
-                    if isHoliday(date) && isAttendedHoliday(date) {
-                        RoundedRectangle(cornerRadius: 4).fill(Color(hex: colorAttendedHex)) // BETREUT: orange
-                    } else if isHoliday(date) {
-                        RoundedRectangle(cornerRadius: 4).fill(Color(hex: colorUnattendedHex)) // UNBETREUT: grau
+                    if isPH {
+                        RoundedRectangle(cornerRadius: 4).fill(Color.fromHex(colorPublicHolidayHex)) // Feiertag: rot
+                    } else if relevant && isAttendedHoliday(date) {
+                        RoundedRectangle(cornerRadius: 4).fill(Color.fromHex(colorAttendedHex)) // BETREUT: orange
+                    } else if relevant {
+                        RoundedRectangle(cornerRadius: 4).fill(Color.fromHex(colorUnattendedHex)) // UNBETREUT: grau
                     } else {
                         Color.clear
                     }
                     Text("\(Calendar.current.component(.day, from: date))")
                         .foregroundColor(
-                            isHoliday(date) && isAttendedHoliday(date) ? .white :
-                            isHoliday(date) ? .white :
+                            isPH ? .white :
+                            relevant && isAttendedHoliday(date) ? .white :
+                            relevant ? .white :
                             .primary
                         )
                         .fontWeight(
-                            isHoliday(date) && !isAttendedHoliday(date) ? .bold : .regular
+                            (isPH || (relevant && !isAttendedHoliday(date))) ? .bold : .regular
                         )
                 }
                 .frame(height: 28)
@@ -170,5 +192,37 @@ struct CalendarGridView: View {
         // DateFormatter: [So, Mo, Di, Mi, Do, Fr, Sa]
         let germanOrder = [1,2,3,4,5,6,0]
         return symbols[germanOrder[index]]
+    }
+    
+    // Hilfsfunktion, damit die Logik auch im Grid verfügbar ist
+    func isSchoolHoliday(_ date: Date) -> Bool {
+        viewModel.schoolHolidays.contains { h in
+            guard let start = h.startDateObject, let end = h.endDateObject else { return false }
+            return (start...end).contains(date)
+        }
+    }
+    
+    // Korrekt im Scope: Kind-freie Tage für das Grid
+    func parentIsChildFreeDay(date: Date) -> Bool {
+        let normalizedDate = Calendar.current.startOfDay(for: date)
+        return viewModel.children.contains { child in
+            child.freeDays.contains { freeDay in
+                Calendar.current.isDate(Calendar.current.startOfDay(for: freeDay.date), inSameDayAs: normalizedDate)
+            }
+        }
+    }
+    
+    // Feiertagsprüfung: true, wenn Tag in viewModel.publicHolidays
+    func isPublicHoliday(_ date: Date) -> Bool {
+        let normalized = Calendar.current.startOfDay(for: date)
+        // publicHolidays ist [SchoolHoliday]
+        for ph in viewModel.publicHolidays {
+            if let start = ph.startDateObject, let end = ph.endDateObject {
+                if (start...end).contains(normalized) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }

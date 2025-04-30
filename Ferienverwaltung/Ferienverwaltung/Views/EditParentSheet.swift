@@ -14,8 +14,8 @@ struct EditParentSheet: View {
     @State private var profileImage: UIImage?
     @State private var showImagePicker = false
     @State private var color: Color
-    @State private var vacationDays: [VacationDay]
     @State private var fixedWeekdays: [Int]
+    @State private var vacationDays: [VacationDay]
 
     init(viewModel: VacationViewModel, parent: Parent, onSave: @escaping (Parent) -> Void) {
         self.viewModel = viewModel
@@ -28,9 +28,9 @@ struct EditParentSheet: View {
         } else {
             _profileImage = State(initialValue: nil)
         }
-        _color = State(initialValue: Color.blue)
-        _vacationDays = State(initialValue: parent.vacationDays)
+        _color = State(initialValue: Color.fromHex(parent.colorHex))
         _fixedWeekdays = State(initialValue: parent.fixedWeekdays)
+        _vacationDays = State(initialValue: parent.vacationDays)
     }
 
     private func parentImageSection() -> some View {
@@ -55,10 +55,10 @@ struct EditParentSheet: View {
                     .navigationTitle("Elternteil bearbeiten")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
+                        ToolbarItem(placement: .navigationBarLeading) {
                             Button("Abbrechen") { dismiss() }
                         }
-                        ToolbarItem(placement: .confirmationAction) {
+                        ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Speichern") {
                                 let updatedParent = Parent(
                                     id: parent.id,
@@ -72,6 +72,7 @@ struct EditParentSheet: View {
                                 )
                                 if let idx = viewModel.parents.firstIndex(where: { $0.id == updatedParent.id }) {
                                     viewModel.parents[idx] = updatedParent
+                                    viewModel.objectWillChange.send()
                                 }
                                 onSave(updatedParent)
                                 dismiss()
@@ -106,50 +107,24 @@ struct EditParentSheet: View {
             Section(header: Text("Farbe")) {
                 ColorPicker("Farbe wählen", selection: $color)
             }
-            Section(header: Text("Urlaubstage")) {
-                if vacationDays.isEmpty {
-                    Text("Noch keine Urlaubstage eingetragen")
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(vacationDays) { day in
-                        HStack {
-                            Text(day.date, style: .date)
-                            Spacer()
-                            Text(day.type.rawValue)
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Button(role: .destructive) {
-                                vacationDays.removeAll { $0.id == day.id }
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                        }
-                    }
-                }
-                Button("Urlaubstag hinzufügen") {
-                    let newDay = VacationDay(date: Date(), type: .vacation)
-                    vacationDays.append(newDay)
-                }
-            }
             Section(header: Text("Feste Betreuungstage")) {
                 Text("Wähle beliebig viele feste Wochentage, an denen dieser Elternteil regelmäßig zu Hause ist und die Kinder betreuen kann.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
                 HStack {
                     let days = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-                    let weekdayIndices = [0, 1, 2, 3, 4, 5, 6] // Mo=0, So=6
-                    ForEach(weekdayIndices, id: \.self) { idx in
+                    ForEach(0..<7) { weekday in
                         Button(action: {
-                            if let index = fixedWeekdays.firstIndex(of: idx) {
-                                fixedWeekdays.remove(at: index)
+                            if fixedWeekdays.contains(weekday) {
+                                fixedWeekdays.removeAll { $0 == weekday }
                             } else {
-                                fixedWeekdays.append(idx)
+                                fixedWeekdays.append(weekday)
                             }
                         }) {
-                            Text(days[idx])
+                            Text(days[weekday])
+                                .font(.subheadline)
+                                .foregroundColor(fixedWeekdays.contains(weekday) ? .white : .primary)
                                 .padding(8)
-                                .background(fixedWeekdays.contains(idx) ? Color.blue : Color(.systemGray5))
-                                .foregroundColor(fixedWeekdays.contains(idx) ? .white : .primary)
+                                .background(fixedWeekdays.contains(weekday) ? Color.accentColor : Color(.systemGray5))
                                 .cornerRadius(8)
                         }
                         .buttonStyle(.plain)
@@ -157,5 +132,42 @@ struct EditParentSheet: View {
                 }
             }
         }
+    }
+
+    // MARK: - Urlaubszeitraum-Logik
+    private func calculateVacationRanges(from days: [VacationDay]) -> [DateInterval] {
+        let sortedDates = days.map { $0.date }.sorted()
+        var ranges: [DateInterval] = []
+        guard var rangeStart = sortedDates.first else { return [] }
+        var previousDate = rangeStart
+        let calendar = Calendar.current
+        for date in sortedDates.dropFirst() {
+            if !calendar.isDate(date, inSameDayAs: previousDate) &&
+                calendar.dateComponents([.day], from: previousDate, to: date).day! > 1 {
+                ranges.append(DateInterval(start: rangeStart, end: previousDate))
+                rangeStart = date
+            }
+            previousDate = date
+        }
+        if !sortedDates.isEmpty {
+            ranges.append(DateInterval(start: rangeStart, end: previousDate))
+        }
+        return ranges
+    }
+    private func deleteVacationRange(_ range: DateInterval) {
+        var current = range.start
+        let calendar = Calendar.current
+        while current <= range.end {
+            if let idx = vacationDays.firstIndex(where: { calendar.isDate($0.date, inSameDayAs: current) }) {
+                vacationDays.remove(at: idx)
+            }
+            current = calendar.date(byAdding: .day, value: 1, to: current) ?? current
+        }
+    }
+    private var dateFormatter: DateFormatter {
+        let df = DateFormatter()
+        df.dateStyle = .medium
+        df.locale = Locale(identifier: "de_DE")
+        return df
     }
 }

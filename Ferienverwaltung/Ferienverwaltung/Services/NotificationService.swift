@@ -1,9 +1,26 @@
+#if canImport(UIKit)
+import UIKit
+#endif
+
 import Foundation
 import UserNotifications
 
 class NotificationService {
     static let shared = NotificationService()
     private init() {}
+    
+    func getKeyWindow() -> UIWindow? {
+        // iOS 15+: Alle aktiven WindowScenes durchsuchen
+        if #available(iOS 15.0, *) {
+            return UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }
+        } else {
+            // Fallback für ältere iOS-Versionen
+            return UIApplication.shared.windows.first { $0.isKeyWindow }
+        }
+    }
     
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
@@ -36,10 +53,19 @@ class NotificationService {
     
     // Test-Benachrichtigung für die Einstellungen
     func sendTestNotification(completion: ((String?) -> Void)? = nil) {
+        print("[NotificationService] sendTestNotification aufgerufen")
         requestAuthorization { granted in
+            print("[NotificationService] requestAuthorization completion: granted=\(granted)")
             guard granted else {
                 let msg = "Push-Benachrichtigungen sind nicht erlaubt. Bitte in den iOS-Einstellungen aktivieren."
                 print("[NotificationService] " + msg)
+                DispatchQueue.main.async {
+                    if let topController = self.getKeyWindow()?.rootViewController {
+                        let alert = UIAlertController(title: "Fehler", message: msg, preferredStyle: .alert)
+                        alert.addAction(UIAlertAction(title: "OK", style: .default))
+                        topController.present(alert, animated: true)
+                    }
+                }
                 completion?(msg)
                 return
             }
@@ -55,8 +81,24 @@ class NotificationService {
                 if let error = error {
                     let msg = "Fehler beim Senden der Test-Benachrichtigung: \(error.localizedDescription)"
                     print("[NotificationService] " + msg)
+                    DispatchQueue.main.async {
+                        if let topController = self.getKeyWindow()?.rootViewController {
+                            let alert = UIAlertController(title: "Fehler", message: msg, preferredStyle: .alert)
+                            alert.addAction(UIAlertAction(title: "OK", style: .default))
+                            topController.present(alert, animated: true)
+                        }
+                    }
                     completion?(msg)
                 } else {
+                    print("[NotificationService] Test-Benachrichtigung wurde erfolgreich hinzugefügt")
+                    // --- FOREGROUND-WORKAROUND: Zeige Hinweis als Alert, wenn App im Vordergrund ist ---
+                    DispatchQueue.main.async {
+                        if let topController = self.getKeyWindow()?.rootViewController {
+                            let alert = UIAlertController(title: "Test-Benachrichtigung", message: "Die Test-Benachrichtigung wurde geplant.\n\nAchtung: iOS zeigt Mitteilungen nur an, wenn die App im Hintergrund oder geschlossen ist. Im Vordergrund erscheint KEINE Push-Nachricht!", preferredStyle: .alert)
+                            alert.addAction(UIAlertAction(title: "OK", style: .default))
+                            topController.present(alert, animated: true)
+                        }
+                    }
                     completion?(nil)
                 }
             }

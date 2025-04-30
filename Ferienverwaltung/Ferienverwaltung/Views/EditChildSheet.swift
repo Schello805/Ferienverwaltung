@@ -155,7 +155,8 @@ struct EditChildSheet: View {
                         Button("Abbrechen", role: .cancel) { showAddFreeDaySheet = false }
                         Spacer()
                         Button("Hinzufügen") {
-                            let newDay = FreeDay(date: newFreeDayDate, reason: newFreeDayReason.isEmpty ? nil : newFreeDayReason)
+                            let normalizedDate = Calendar.current.startOfDay(for: newFreeDayDate)
+                            let newDay = FreeDay(date: normalizedDate, reason: newFreeDayReason.isEmpty ? nil : newFreeDayReason)
                             child.freeDays.append(newDay)
                             newFreeDayDate = Date()
                             newFreeDayReason = ""

@@ -272,7 +272,6 @@ struct ContentView: View {
     @State private var isAddParentSheetPresented = false
     @State private var isSettingsPresented = false
     @State private var newParentName = ""
-    @State private var showCalendar = false
     
     var body: some View {
         VStack {
@@ -297,31 +296,6 @@ struct ContentView: View {
                         Label("Einstellungen", systemImage: "gear")
                     }
                     .tag(3)
-            }
-            .overlay(
-                Group {
-                    if selectedTab == 0 { // Nur auf Startseite anzeigen
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Button(action: { showCalendar = true }) {
-                                    Label("Kalenderübersicht", systemImage: "calendar")
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(Color.blue.opacity(0.15))
-                                        .cornerRadius(12)
-                                }
-                                .padding([.horizontal, .bottom])
-                                Spacer()
-                            }
-                        }
-                        .padding(.bottom, 60) // Platz für die TabBar lassen
-                    }
-                }
-            )
-            .sheet(isPresented: $showCalendar) {
-                CalendarOverviewView(viewModel: viewModel)
             }
         }
         .onAppear {

@@ -2,67 +2,46 @@ import SwiftUI
 
 struct AppInfoView: View {
     var body: some View {
-        VStack(spacing: 18) {
-            Image(systemName: "calendar.badge.clock")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 64, height: 64)
-                .foregroundColor(.accentColor)
-            Text("Ferienverwaltung")
-                .font(.title)
-                .bold()
-            Text("Version 1.0.0")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Text("Diese App hilft Eltern, Schulferien, Feiertage und Urlaubsplanung für alle Bundesländer Deutschlands übersichtlich zu verwalten.")
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
-            Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Dokumentation")
+        ScrollView {
+            VStack(spacing: 18) {
+                Image(systemName: "calendar.badge.clock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .foregroundColor(.accentColor)
+                Text("Ferienverwaltung")
+                    .font(.title)
+                    .bold()
+                Text("Version 1.0.0")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Divider()
+                Text("Entwickelt von Michael Schellenberger")
+                    .font(.headline)
+                Divider()
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Datenschutzerklärung")
                         .font(.headline)
-                    Text("README (Kurzfassung):")
-                        .font(.subheadline)
-                        .bold()
-                    Text("""
-# Ferienverwaltung (Vacation Management)
-
-Eine moderne iOS-App zur Verwaltung von Schulferien, Feiertagen und Elternurlaub in Deutschland.
-
-## Features
-- Übersicht aller schulfreien Tage (Ferien + relevante Feiertage) pro Jahr
-- Verwaltung von Eltern und Urlaubstagen
-- Anzeige unbetreuter Ferientage & Push-Benachrichtigungen
-- Auswahl Bundesland, Speicherung lokal
-""")
+                    Text("Ihre Daten werden ausschließlich lokal auf Ihrem Gerät gespeichert. Es erfolgt keine Übertragung an Dritte. Weitere Informationen finden Sie auf unserer Website oder per E-Mail an info@schellenberger.biz.")
                         .font(.footnote)
-                        .padding(.bottom, 8)
+                        .foregroundColor(.secondary)
                     Divider()
-                    Text("Lizenz")
+                    Text("Impressum")
                         .font(.headline)
-                    Text("""
-Copyright 2025 Michael Schellenberger. Alle Rechte vorbehalten. Keine Weitergabe oder Nutzung ohne Genehmigung. Siehe LICENSE.md für Details.
-""")
+                    Text("Michael Schellenberger, info@schellenberger.biz\nBreslauer Str. 18, 82194 Gröbenzell")
                         .font(.footnote)
-                        .padding(.bottom, 8)
+                        .foregroundColor(.secondary)
                     Divider()
-                    Text("Datenschutz")
+                    Text("Nutzungsbedingungen")
                         .font(.headline)
-                    Text("""
-Alle Daten werden ausschließlich lokal gespeichert. Es werden keine personenbezogenen Daten an Server übermittelt. Details siehe Datenschutzerklärung (PRIVACY_POLICY.md).
-""")
+                    Text("Die App wird ohne Gewähr bereitgestellt. Die Nutzung erfolgt auf eigene Verantwortung.")
                         .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
                 .padding(.top, 8)
             }
-            Divider()
-            Link("Komplette Datenschutzerklärung lesen", destination: URL(string: "https://ferienverwaltung.app/datenschutz")!)
-                .font(.footnote)
-                .padding(.top, 8)
-            Spacer()
+            .padding()
         }
-        .padding()
         .navigationTitle("Über diese App")
     }
 }

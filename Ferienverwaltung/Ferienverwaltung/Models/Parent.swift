@@ -51,15 +51,53 @@ enum Relationship: String, Codable, CaseIterable, Hashable {
     case other = "Andere"
 }
 
+// MARK: - VacationDay mit lokalem Datum-Codierer
 struct VacationDay: Identifiable, Codable, Hashable {
     var id = UUID()
     var date: Date
     var type: VacationType
-    
+
+    // Custom Coding für Datum als "yyyy-MM-dd" (lokale Mitternacht)
+    enum CodingKeys: String, CodingKey {
+        case id, date, type
+    }
+
+    init(id: UUID = UUID(), date: Date, type: VacationType) {
+        self.id = id
+        self.date = date
+        self.type = type
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        type = try container.decode(VacationType.self, forKey: .type)
+        // Datum als String im Format "yyyy-MM-dd"
+        let dateString = try container.decode(String.self, forKey: .date)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        guard let parsedDate = formatter.date(from: dateString) else {
+            throw DecodingError.dataCorruptedError(forKey: .date, in: container, debugDescription: "Ungültiges Datumsformat: \(dateString)")
+        }
+        self.date = parsedDate
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        let dateString = formatter.string(from: date)
+        try container.encode(dateString, forKey: .date)
+    }
+
     static func == (lhs: VacationDay, rhs: VacationDay) -> Bool {
         lhs.id == rhs.id && lhs.date == rhs.date && lhs.type == rhs.type
     }
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(date)
