@@ -154,7 +154,10 @@ struct ParentListView: View {
                             }
                             Spacer()
                             // Anzahl der Urlaubstage während Schulferien im gewählten Jahr
-                            Text("\(viewModel.vacationWorkdaysExcludingHolidays(for: parent, in: selectedYear)) Tage")
+                            let yearCounts = viewModel.vacationWorkdaysPerYear(for: parent)
+                            let sortedYears = yearCounts.keys.sorted()
+                            let yearStrings = sortedYears.map { "\(yearCounts[$0] ?? 0) Tage in \($0)" }
+                            Text(yearStrings.joined(separator: ", "))
                                 .font(.caption2)
                                 .foregroundColor(.accentColor)
                             Image(systemName: "chevron.right")

@@ -664,8 +664,7 @@ class VacationViewModel: ObservableObject {
                 if weekday != 1 && weekday != 7 && calendar.component(.year, from: date) == year && !publicHolidaySet.contains(date) {
                     allVacationDays.insert(date)
                 }
-                guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else { break }
-                date = nextDate
+                date = calendar.date(byAdding: .day, value: 1, to: date)!
             }
         }
         let vacationDayCount = allVacationDays.count
@@ -686,74 +685,34 @@ class VacationViewModel: ObservableObject {
     }
     
     // MARK: - Vacation Workdays for Parent (Centralized)
-    func vacationWorkdaysExcludingHolidays(for parent: Parent, in year: Int) -> Int {
+    /// Gibt die Werktage (Mo-Fr, ohne Feiertage) eines Elternteils im Jahr gruppiert nach Kalenderjahr zurück
+    /// Es werden nur bundesweite oder landesweite Feiertage (für das aktuelle Bundesland) berücksichtigt, keine regionalen Feiertage.
+    func vacationWorkdaysPerYear(for parent: Parent) -> [Int: Int] {
         let calendar = utcCalendar
-        let schoolHolidayDays = schoolHolidays.flatMap { (holiday: SchoolHoliday) -> [Date] in
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { return [] }
-            var days: [Date] = []
-            var alleFerienWerktageString: [String] = []
-            var relevanteTageString: [String] = []
-            var current = start
-            let dateFormatter = DateFormatter()
-            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            let uniqueHolidayDayStrings = Set(publicHolidays.compactMap { holiday in
-                holiday.startDateObject.map { dateFormatter.string(from: calendar.startOfDay(for: $0)) }
-            })
-            print("[DEBUG-MARKER] >>> vacationWorkdaysExcludingHolidays gestartet! <<<")
-            print("[DEBUG] publicHolidays (Objekte): \(publicHolidays.map { String(describing: $0) })")
-            print("[DEBUG] publicHolidays startDateObject: \(publicHolidays.compactMap { $0.startDateObject })")
-            print("[DEBUG] publicHolidays startDateObject (yyyy-MM-dd): \(publicHolidays.compactMap { $0.startDateObject }.map { dateFormatter.string(from: calendar.startOfDay(for: $0)) })")
-            print("[DEBUG] uniqueHolidayDayStrings: \(uniqueHolidayDayStrings.sorted())")
-            print("[DEBUG] Beispieltest: Enthält Feiertagsliste 2025-04-18? \(uniqueHolidayDayStrings.contains("2025-04-18"))")
-            var printCount = 0
-            while current <= end {
-                let weekday = calendar.component(.weekday, from: current)
-                let normalizedCurrent = calendar.startOfDay(for: current)
-                let currentDayString = dateFormatter.string(from: normalizedCurrent)
-                alleFerienWerktageString.append(currentDayString)
-                if !uniqueHolidayDayStrings.contains(currentDayString)
-                    && weekday != 1 && weekday != 7 {
-                    relevanteTageString.append(currentDayString)
-                    days.append(normalizedCurrent)
-                }
-                if printCount < 3 {
-                    print("[DEBUG] Prüfe Ferientag: \(currentDayString) gegen Liste: \(uniqueHolidayDayStrings)")
-                    print("[DEBUG] Ist Feiertag: \(uniqueHolidayDayStrings.contains(currentDayString))")
-                    printCount += 1
-                }
-                guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
-                current = next
-            }
-            // Neue Debug-Ausgaben für exakten Vergleich im yyyy-MM-dd-Format
-            print("[DEBUG-ALERT] vacationWorkdaysExcludingHolidays wurde aufgerufen! Debug-Ausgaben jetzt suchen!")
-            let alleFerienWerktageStringSorted = alleFerienWerktageString.sorted()
-            print("[DEBUG] alleFerienWerktage (yyyy-MM-dd): \(alleFerienWerktageStringSorted)")
-            print("[DEBUG] uniqueHolidayDayStrings (yyyy-MM-dd): \(uniqueHolidayDayStrings.sorted())")
-            // Test: Enthält uniqueHolidayDayStrings einen bekannten Feiertag?
-            let testFeiertag = "2025-04-18"
-            print("[DEBUG] Test: Enthält uniqueHolidayDayStrings \(testFeiertag)? \(uniqueHolidayDayStrings.contains(testFeiertag))")
-            // Test: Enthält alleFerienWerktageString einen bekannten Feiertag?
-            print("[DEBUG] Test: Enthält alleFerienWerktageString \(testFeiertag)? \(alleFerienWerktageString.contains(testFeiertag))")
-            // Vergleiche alle relevanten Tage gegen Feiertagsliste
-            for tag in alleFerienWerktageString.prefix(10) { // nur erste 10 für Übersicht
-                let istFeiertag = uniqueHolidayDayStrings.contains(tag)
-                print("[DEBUG] Vergleich Tag \(tag) -> Feiertag: \(istFeiertag)")
-            }
-            return days
+        var yearCounts: [Int: Int] = [:]
+        // Bundesland-Code für Filterung
+        let bundeslandCode = selectedState.rawValue.lowercased()
+        // Nur bundesweite oder für das aktuelle Bundesland gültige Feiertage
+        let filteredHolidays = publicHolidays.filter { ph in
+            if ph.nationwide == true { return true }
+            // subdivisions: ["BY", "NW", ...] => muss Bundesland enthalten
+            if let subs = ph.subdivisions, subs.map({ $0.lowercased() }).contains(bundeslandCode) { return true }
+            return false
         }
-        let uniqueSchoolDays = Set(schoolHolidayDays.map { calendar.startOfDay(for: $0) })
-        let freeDays = children.flatMap { (child: Child) in child.freeDays }.map { calendar.startOfDay(for: $0.date) }
-        let parentVacationDays = parent.vacationDays
-            .map { calendar.startOfDay(for: $0.date) }
-            .filter { uniqueSchoolDays.contains($0) && !freeDays.contains($0) }
-        print("[DEBUG] Ferienjahr: \(year)")
-        print("[DEBUG] Alle Schulferien-Werktage: \(uniqueSchoolDays.sorted())")
-        print("[DEBUG] Alle Feiertage: \(publicHolidays.compactMap { $0.startDateObject })")
-        print("[DEBUG] Alle FreeDays: \(freeDays.sorted())")
-        print("[DEBUG] Parent: \(parent.name), Urlaubstage: \(parentVacationDays.sorted())")
-        print("[DEBUG] vacationWorkdaysExcludingHolidays: \(parentVacationDays.count)")
-        return parentVacationDays.count
+        for vacation in parent.vacationDays {
+            let date = calendar.startOfDay(for: vacation.date)
+            let weekday = calendar.component(.weekday, from: date)
+            let isWorkday = weekday >= 2 && weekday <= 6 // Mo-Fr
+            let isHoliday = filteredHolidays.contains { ph in
+                guard let s = ph.startDateObject, let e = ph.endDateObject else { return false }
+                return date >= calendar.startOfDay(for: s) && date <= calendar.startOfDay(for: e)
+            }
+            if isWorkday && !isHoliday {
+                let year = calendar.component(.year, from: date)
+                yearCounts[year, default: 0] += 1
+            }
+        }
+        return yearCounts
     }
     
     // MARK: - Export/Import
@@ -916,5 +875,34 @@ class VacationViewModel: ObservableObject {
             date = calendar.date(byAdding: .day, value: 1, to: date)!
         }
         return count
+    }
+    
+    /// Gibt die Werktage (Mo-Fr, ohne Feiertage) eines Elternteils im Jahr gruppiert nach Kalenderjahr zurück
+    func vacationWorkdaysPerYear(for parent: Parent) -> [Int: Int] {
+        let calendar = utcCalendar
+        var yearCounts: [Int: Int] = [:]
+        // Bundesland-Code für Filterung
+        let bundeslandCode = selectedState.rawValue.lowercased()
+        // Nur bundesweite oder für das aktuelle Bundesland gültige Feiertage
+        let filteredHolidays = publicHolidays.filter { ph in
+            if ph.nationwide == true { return true }
+            // subdivisions: ["BY", "NW", ...] => muss Bundesland enthalten
+            if let subs = ph.subdivisions, subs.map({ $0.lowercased() }).contains(bundeslandCode) { return true }
+            return false
+        }
+        for vacation in parent.vacationDays {
+            let date = calendar.startOfDay(for: vacation.date)
+            let weekday = calendar.component(.weekday, from: date)
+            let isWorkday = weekday >= 2 && weekday <= 6 // Mo-Fr
+            let isHoliday = filteredHolidays.contains { ph in
+                guard let s = ph.startDateObject, let e = ph.endDateObject else { return false }
+                return date >= calendar.startOfDay(for: s) && date <= calendar.startOfDay(for: e)
+            }
+            if isWorkday && !isHoliday {
+                let year = calendar.component(.year, from: date)
+                yearCounts[year, default: 0] += 1
+            }
+        }
+        return yearCounts
     }
 }
