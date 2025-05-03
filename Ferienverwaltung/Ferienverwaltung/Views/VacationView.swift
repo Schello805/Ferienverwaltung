@@ -24,13 +24,10 @@ struct VacationView: View {
     @State private var childToEdit: Child? = nil
     @State private var showDeleteChildAlert = false
     @State private var pendingDeleteChild: Child? = nil
+    @State private var selectedTab: Int = 0
 
     private var headerBackground: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [Color.accentColor.opacity(0.15), Color.clear]),
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+        Color(.systemGroupedBackground)
         .edgesIgnoringSafeArea(.top)
     }
 
@@ -42,167 +39,193 @@ struct VacationView: View {
     }()
 
     var body: some View {
-        NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("Familie")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Spacer()
-                }
-                .padding([.horizontal, .top])
-                .background(headerBackground)
-                List {
-                    adultsSection
-                    Section(header:
-                        HStack {
-                            Image(systemName: "person.3.sequence.fill")
-                                .foregroundColor(.blue)
-                            Text("Kinder")
-                                .font(.headline)
+        GeometryReader { geometry in
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Section(header: EmptyView()) {
+                            adultsSection
                         }
-                    ) {
-                        ForEach(viewModel.children, id: \.id) { child in
-                            DisclosureGroup {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    if !child.freeDays.isEmpty {
-                                        Text("Freie Tage:")
-                                            .font(.subheadline)
-                                            .bold()
-                                        ForEach(child.freeDays.sorted(by: { $0.date < $1.date })) { freeDay in
-                                            HStack {
-                                                Text(dateFormatter.string(from: freeDay.date))
-                                                if let reason = freeDay.reason, !reason.isEmpty {
-                                                    Text("· " + reason)
-                                                        .foregroundColor(.secondary)
+                        Section(header:
+                            HStack {
+                                Image(systemName: "person.3.sequence.fill")
+                                    .foregroundColor(.blue)
+                                Text("Kinder")
+                                    .font(.headline)
+                            }
+                        ) {
+                            ForEach(viewModel.children, id: \.id) { child in
+                                DisclosureGroup {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        if !child.freeDays.isEmpty {
+                                            Text("Freie Tage:")
+                                                .font(.subheadline)
+                                                .bold()
+                                            ForEach(child.freeDays.sorted(by: { $0.date < $1.date })) { freeDay in
+                                                HStack {
+                                                    Text(dateFormatter.string(from: freeDay.date))
+                                                    if let reason = freeDay.reason, !reason.isEmpty {
+                                                        Text("· " + reason)
+                                                            .foregroundColor(.secondary)
+                                                    }
                                                 }
                                             }
-                                        }
-                                    } else {
-                                        Text("Keine freien Tage eingetragen.")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .padding(.vertical, 4)
-                            } label: {
-                                Button(action: {
-                                    childToEdit = child
-                                    showEditChildSheet = true
-                                }) {
-                                    HStack(spacing: 16) {
-                                        if let data = child.profileImageData, let uiImage = UIImage(data: data) {
-                                            Image(uiImage: uiImage)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .frame(width: 48, height: 48)
-                                                .clipShape(Circle())
                                         } else {
-                                            ZStack {
-                                                Circle().fill(Color.accentColor)
-                                                    .frame(width: 48, height: 48)
-                                                Image(systemName: "person.fill")
-                                                    .foregroundColor(.white)
-                                                    .font(.system(size: 28))
-                                            }
+                                            Text("Keine freien Tage eingetragen.")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
                                         }
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(child.name)
-                                                .font(.headline)
-                                            if let age = child.age {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "calendar")
-                                                        .font(.system(size: 13))
-                                                    Text("Alter: \(age)")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.gray)
+                                    }
+                                    .padding(.vertical, 4)
+                                } label: {
+                                    Button(action: {
+                                        childToEdit = child
+                                        showEditChildSheet = true
+                                    }) {
+                                        HStack(spacing: 16) {
+                                            if let data = child.profileImageData, let uiImage = UIImage(data: data) {
+                                                Image(uiImage: uiImage)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: 44, height: 44)
+                                                    .clipShape(Circle())
+                                            } else {
+                                                Circle()
+                                                    .fill(Color(.systemGray5))
+                                                    .frame(width: 44, height: 44)
+                                                Text(String(child.name.prefix(1)))
+                                                    .font(.title2)
+                                                    .foregroundColor(.white)
+                                            }
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(child.name)
+                                                    .font(.headline)
+                                                Text(child.type.rawValue)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(.vertical, 6)
+                                    }
+                                }
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        pendingDeleteChild = child
+                                        showDeleteChildAlert = true
+                                    } label: {
+                                        Label("Löschen", systemImage: "trash")
+                                    }
+                                }
+                            }
+                            Button(action: { showAddChildSheet = true }) {
+                                Label("Kind hinzufügen", systemImage: "plus")
+                            }
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+                .listRowSeparator(.hidden)
+                .listStyle(.plain)
+                .sheet(isPresented: $showAddParentSheet) {
+                    AddParentSheet(viewModel: viewModel) { _ in
+                        showAddParentSheet = false
+                    }
+                }
+                .background(Color(.systemGroupedBackground))
+                .edgesIgnoringSafeArea(.all)
+            } else {
+                // iPhone-Layout (wie gehabt)
+                NavigationView {
+                    List {
+                        Section(header: EmptyView()) {
+                            adultsSection
+                        }
+                        Section(header:
+                            HStack {
+                                Image(systemName: "person.3.sequence.fill")
+                                    .foregroundColor(.blue)
+                                Text("Kinder")
+                                    .font(.headline)
+                            }
+                        ) {
+                            ForEach(viewModel.children, id: \.id) { child in
+                                DisclosureGroup {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        if !child.freeDays.isEmpty {
+                                            Text("Freie Tage:")
+                                                .font(.subheadline)
+                                                .bold()
+                                            ForEach(child.freeDays.sorted(by: { $0.date < $1.date })) { freeDay in
+                                                HStack {
+                                                    Text(dateFormatter.string(from: freeDay.date))
+                                                    if let reason = freeDay.reason, !reason.isEmpty {
+                                                        Text("· " + reason)
+                                                            .foregroundColor(.secondary)
+                                                    }
                                                 }
                                             }
-                                            if let notes = child.notes, !notes.isEmpty {
-                                                Text(notes)
-                                                    .font(.caption2)
-                                                    .foregroundColor(.gray)
-                                            }
+                                        } else {
+                                            Text("Keine freien Tage eingetragen.")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
                                         }
-                                        Spacer()
                                     }
-                                    .padding(.vertical, 6)
-                                }
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    pendingDeleteChild = child
-                                    showDeleteChildAlert = true
+                                    .padding(.vertical, 4)
                                 } label: {
-                                    Label("Löschen", systemImage: "trash")
+                                    Button(action: {
+                                        childToEdit = child
+                                        showEditChildSheet = true
+                                    }) {
+                                        HStack(spacing: 16) {
+                                            if let data = child.profileImageData, let uiImage = UIImage(data: data) {
+                                                Image(uiImage: uiImage)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: 44, height: 44)
+                                                    .clipShape(Circle())
+                                            } else {
+                                                Circle()
+                                                    .fill(Color(.systemGray5))
+                                                    .frame(width: 44, height: 44)
+                                                Text(String(child.name.prefix(1)))
+                                                    .font(.title2)
+                                                    .foregroundColor(.white)
+                                            }
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(child.name)
+                                                    .font(.headline)
+                                                Text(child.type.rawValue)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(.vertical, 6)
+                                    }
+                                }
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        pendingDeleteChild = child
+                                        showDeleteChildAlert = true
+                                    } label: {
+                                        Label("Löschen", systemImage: "trash")
+                                    }
                                 }
                             }
-                        }
-                        Button(action: { showAddChildSheet = true }) {
-                            Label("Kind hinzufügen", systemImage: "plus")
-                        }
-                    }
-                }
-                .listStyle(.plain)
-                .alert(isPresented: $showDeleteParentAlert) {
-                    Alert(
-                        title: Text("Betreuer löschen?"),
-                        message: Text("Bist du sicher, dass du diesen Betreuer löschen möchtest?"),
-                        primaryButton: .destructive(Text("Löschen")) {
-                            if let indexSet = pendingDeleteParentIndexSet {
-                                viewModel.parents.remove(atOffsets: indexSet)
+                            Button(action: { showAddChildSheet = true }) {
+                                Label("Kind hinzufügen", systemImage: "plus")
                             }
-                        },
-                        secondaryButton: .cancel()
-                    )
-                }
-                Spacer()
-            }
-            .sheet(isPresented: $showAddParentSheet) {
-                NavigationView {
-                    AddParentSheet(viewModel: viewModel)
-                }
-            }
-            .sheet(isPresented: $showAddChildSheet) {
-                AddChildSheet(viewModel: viewModel)
-            }
-            .sheet(item: $childToEdit) { child in
-                EditChildSheet(viewModel: viewModel, child: child) {
-                    // Nach dem Speichern Sheet schließen und State zurücksetzen
-                    showEditChildSheet = false
-                    childToEdit = nil
-                }
-            }
-            .sheet(item: $parentToEdit) { parent in
-                EditParentSheet(viewModel: viewModel, parent: parent) { updatedParent in
-                    if let idx = viewModel.parents.firstIndex(where: { $0.id == updatedParent.id }) {
-                        viewModel.parents[idx] = updatedParent
-                    }
-                    parentToEdit = nil
-                }
-            }
-            .alert(isPresented: $showDeleteChildAlert) {
-                Alert(
-                    title: Text("Kind löschen?"),
-                    message: Text("Möchtest du \(pendingDeleteChild?.name ?? "das Kind") wirklich löschen?"),
-                    primaryButton: .destructive(Text("Löschen")) {
-                        if let child = pendingDeleteChild {
-                            viewModel.deleteChild(child)
                         }
-                        pendingDeleteChild = nil
-                    },
-                    secondaryButton: .cancel {
-                        pendingDeleteChild = nil
                     }
-                )
+                }
+                .navigationBarTitle("Familie")
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarBackground(Color(.systemGroupedBackground), for: .navigationBar)
             }
         }
-        .navigationTitle("Betreuer hinzufügen")
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Abbrechen") { dismiss() }
-            }
-        }
+        .navigationTitle("Familie")
     }
 
     private var adultsSection: some View {
@@ -256,6 +279,104 @@ struct VacationView: View {
         }
     }
 
+    // --- iPad Main Content ---
+    private struct MainContent: View {
+        let viewModel: VacationViewModel
+        let headerBackground: AnyView
+        let adultsSection: AnyView
+        let dateFormatter: DateFormatter
+        @Binding var childToEdit: Child?
+        @Binding var showEditChildSheet: Bool
+        @Binding var pendingDeleteChild: Child?
+        @Binding var showDeleteChildAlert: Bool
+        @Binding var showAddChildSheet: Bool
+        var body: some View {
+            VStack(alignment: .leading, spacing: 16) {
+                List {
+                    Section(header: EmptyView()) {
+                        adultsSection
+                    }
+                    Section(header:
+                        HStack {
+                            Image(systemName: "person.3.sequence.fill")
+                                .foregroundColor(.blue)
+                            Text("Kinder")
+                                .font(.headline)
+                        }
+                    ) {
+                        ForEach(viewModel.children, id: \.id) { child in
+                            DisclosureGroup {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    if !child.freeDays.isEmpty {
+                                        Text("Freie Tage:")
+                                            .font(.subheadline)
+                                            .bold()
+                                        ForEach(child.freeDays.sorted(by: { $0.date < $1.date })) { freeDay in
+                                            HStack {
+                                                Text(dateFormatter.string(from: freeDay.date))
+                                                if let reason = freeDay.reason, !reason.isEmpty {
+                                                    Text("· " + reason)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Text("Keine freien Tage eingetragen.")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            } label: {
+                                Button(action: {
+                                    childToEdit = child
+                                    showEditChildSheet = true
+                                }) {
+                                    HStack(spacing: 16) {
+                                        if let data = child.profileImageData, let uiImage = UIImage(data: data) {
+                                            Image(uiImage: uiImage)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .frame(width: 44, height: 44)
+                                                .clipShape(Circle())
+                                        } else {
+                                            Circle()
+                                                .fill(Color(.systemGray5))
+                                                .frame(width: 44, height: 44)
+                                            Text(String(child.name.prefix(1)))
+                                                .font(.title2)
+                                                .foregroundColor(.white)
+                                        }
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(child.name)
+                                                .font(.headline)
+                                            Text(child.type.rawValue)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 6)
+                                }
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    pendingDeleteChild = child
+                                    showDeleteChildAlert = true
+                                } label: {
+                                    Label("Löschen", systemImage: "trash")
+                                }
+                            }
+                        }
+                        Button(action: { showAddChildSheet = true }) {
+                            Label("Kind hinzufügen", systemImage: "plus")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     struct ImagePicker: UIViewControllerRepresentable {
         @Binding var image: UIImage?
         func makeCoordinator() -> Coordinator {
@@ -280,5 +401,13 @@ struct VacationView: View {
                 picker.dismiss(animated: true)
             }
         }
+    }
+}
+
+extension View {
+    func ipadStyled() -> some View {
+        self
+            .navigationBarHidden(UIDevice.current.userInterfaceIdiom == .pad)
+            .padding(UIDevice.current.userInterfaceIdiom == .pad ? EdgeInsets() : EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
 }

@@ -6,7 +6,7 @@ import Combine
 func countSchoolFreeWeekdays(start: Date, end: Date, publicHolidays: [SchoolHoliday], filterYear: Int? = nil) -> Int {
     let calendar = Calendar.current
     let publicHolidayDates: [Date] = publicHolidays.compactMap { ph in
-        guard let phDate = ph.startDateObject else { return nil }
+        let phDate = ph.startDateObject
         if phDate >= start && phDate <= end { return phDate } else { return nil }
     }
     var count = 0
@@ -94,15 +94,12 @@ class VacationViewModel: ObservableObject {
         didSet {
             let old = publicHolidays
             let normalized = publicHolidays.map { h in
-                let newStart = midnight(for: h.startDateObject ?? Date())
-                let newEnd = midnight(for: h.endDateObject ?? Date())
-                // Debug: Ursprungs-String und resultierendes Date mit Zeitzone ausgeben
-                print("[DEBUG] Feiertag-Import: \(h.holidayName) | API-String: \(h.startDate) | startDateObject: \(String(describing: h.startDateObject)) | normalisiert: \(newStart) [TZ: \(selectedTimeZone.identifier)]")
-                print("[DEBUG] Feiertag-Import: \(h.holidayName) | API-String: \(h.endDate) | endDateObject: \(String(describing: h.endDateObject)) | normalisiert: \(newEnd) [TZ: \(selectedTimeZone.identifier)]")
+                let newStart = midnight(for: h.startDateObject)
+                let newEnd = midnight(for: h.endDateObject)
                 // Workaround: Rückgabe als neues SchoolHoliday-Objekt mit normalisierten Strings
                 var copy = h
-                let f = DateFormatter()
-                f.dateFormat = "yyyy-MM-dd"
+                let f = Self.apiDateFormatter
+                // Zeitzone ggf. setzen, falls dynamisch nötig
                 f.timeZone = selectedTimeZone
                 copy = SchoolHoliday(
                     id: h.id,
@@ -162,6 +159,15 @@ class VacationViewModel: ObservableObject {
         return cal
     }()
     
+    // Zentraler DateFormatter für yyyy-MM-dd (API)
+    private static let apiDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+    
     init() {
         // Load saved data
         self.parents = StorageService.shared.loadParents()
@@ -170,69 +176,6 @@ class VacationViewModel: ObservableObject {
         self.schoolHolidays = StorageService.shared.loadSchoolHolidays()
         self.publicHolidays = StorageService.shared.loadPublicHolidays()
 
-        // --- BEGIN: Migration für bestehende Termine auf Mitternacht ---
-        let migrationKey = "didMigrateVacationDatesToMidnight_v1"
-        if !UserDefaults.standard.bool(forKey: migrationKey) {
-            var migrated = false
-            // Eltern-Termine
-            var normalizedParents = self.parents
-            for i in 0..<normalizedParents.count {
-                var parent = normalizedParents[i]
-                let oldDays = parent.vacationDays
-                parent.vacationDays = parent.vacationDays.map { day in
-                    var vd = day
-                    vd.date = Calendar.current.startOfDay(for: day.date)
-                    return vd
-                }
-                if parent.vacationDays != oldDays { migrated = true }
-                normalizedParents[i] = parent
-            }
-            // DEBUG: Direkt nach der Normalisierung ausgeben (vor dem Speichern)
-            let df = DateFormatter()
-            df.dateFormat = "yyyy-MM-dd HH:mm:ss ZZZZ"
-            df.timeZone = TimeZone.current
-            for parent in normalizedParents {
-                print("[DEBUG][MIGRATION] Parent: \(parent.name)")
-                for day in parent.vacationDays {
-                    print("[DEBUG][MIGRATION]   VacationDay: \(df.string(from: day.date)) (\(day.date))")
-                }
-            }
-            if migrated { StorageService.shared.saveParents(normalizedParents) }
-            self.parents = normalizedParents
-
-            // Kinder-Termine
-            migrated = false
-            var normalizedChildren = self.children
-            for i in 0..<normalizedChildren.count {
-                var child = normalizedChildren[i]
-                let oldDays = child.freeDays
-                child.freeDays = child.freeDays.map { freeDay in
-                    var fd = freeDay
-                    fd.date = utcMidnight(for: freeDay.date)
-                    return fd
-                }
-                if child.freeDays != oldDays { migrated = true }
-                normalizedChildren[i] = child
-            }
-            // DEBUG: Direkt nach der Normalisierung ausgeben (vor dem Speichern)
-            for child in normalizedChildren {
-                print("[DEBUG][MIGRATION] Child: \(child.name)")
-                for freeDay in child.freeDays {
-                    print("[DEBUG][MIGRATION]   FreeDay: \(df.string(from: freeDay.date)) (\(freeDay.date))")
-                }
-            }
-            if migrated { StorageService.shared.saveChildren(normalizedChildren) }
-            self.children = normalizedChildren
-
-            UserDefaults.standard.set(true, forKey: migrationKey)
-            print("[Migration] Alle bestehenden Termine wurden auf Mitternacht normalisiert.")
-        }
-        // --- ENDE: Migration ---
-        if let savedTZ = UserDefaults.standard.string(forKey: "userSelectedTimeZone"), let tz = TimeZone(identifier: savedTZ) {
-            selectedTimeZone = tz
-        } else {
-            selectedTimeZone = TimeZone.current
-        }
         // Listener für Bundesland-Änderungen
         $selectedState
             .sink(receiveValue: { [weak self] _ in
@@ -242,10 +185,7 @@ class VacationViewModel: ObservableObject {
             })
             .store(in: &cancellables)
 
-        // Initial fetch/caching für 2 Jahre
-        Task {
-            await updateHolidayCacheIfNeeded()
-        }
+        // Initial fetch/caching für 2 Jahre wird jetzt von außen (ContentView) getriggert
     }
     
     // Hilfsfunktion: Mitternacht in UTC
@@ -309,10 +249,8 @@ class VacationViewModel: ObservableObject {
     func isSchoolHoliday(on date: Date) -> Bool {
         let normalizedDate = Calendar.current.startOfDay(for: date)
         return schoolHolidays.contains { holiday in
-            guard let start = holiday.startDateObject,
-                  let end = holiday.endDateObject else {
-                return false
-            }
+            let start = holiday.startDateObject
+            let end = holiday.endDateObject
             let range = DateInterval(start: start, end: end)
             return range.contains(normalizedDate)
         }
@@ -321,10 +259,8 @@ class VacationViewModel: ObservableObject {
     func getHolidayName(for date: Date) -> String? {
         let normalizedDate = Calendar.current.startOfDay(for: date)
         return schoolHolidays.first { holiday in
-            guard let start = holiday.startDateObject,
-                  let end = holiday.endDateObject else {
-                return false
-            }
+            let start = holiday.startDateObject
+            let end = holiday.endDateObject
             let range = DateInterval(start: start, end: end)
             return range.contains(normalizedDate)
         }?.holidayName
@@ -332,11 +268,15 @@ class VacationViewModel: ObservableObject {
     
     func hasUnattendedDay(on date: Date) -> Bool {
         let normalizedDate = Calendar.current.startOfDay(for: date)
-        return !parents.contains { parent in
+        let weekday = Calendar.current.component(.weekday, from: normalizedDate)
+        let weekdayZeroBased = (weekday + 5) % 7 // 0=Montag ... 6=Sonntag
+        // Ein Tag ist betreut, wenn mind. ein Elternteil Urlaub hat ODER einen festen Betreuungstag
+        let isAttended = parents.contains { parent in
             parent.vacationDays.contains { day in
                 Calendar.current.isDate(day.date, inSameDayAs: normalizedDate)
-            }
+            } || parent.fixedWeekdays.contains(weekdayZeroBased)
         }
+        return !isAttended
     }
     
     // Lädt und cached Schulferien & Feiertage für 2 Jahre, nur wenn nötig
@@ -358,7 +298,6 @@ class VacationViewModel: ObservableObject {
             // Nutze Cache
             self.schoolHolidays = cachedSchool
             self.publicHolidays = cachedPublic
-            print("[DEBUG] Feiertage aus Cache geladen: \(cachedPublic.count)")
             isLoading = false
             return
         }
@@ -389,7 +328,6 @@ class VacationViewModel: ObservableObject {
         if !force && !needsUpdate && !cachedSchool.isEmpty && !cachedPublic.isEmpty {
             self.schoolHolidays = cachedSchool
             self.publicHolidays = cachedPublic
-            print("[DEBUG] Feiertage aus Cache geladen: \(cachedPublic.count)")
             isLoading = false
             return
         }
@@ -407,7 +345,6 @@ class VacationViewModel: ObservableObject {
             StorageService.shared.savePublicHolidays(allPublic)
             self.schoolHolidays = allSchool
             self.publicHolidays = allPublic
-            print("[DEBUG] Feiertage aus API geladen: \(allPublic.count)")
             isLoading = false
         } catch {
             self.error = error.localizedDescription
@@ -418,11 +355,12 @@ class VacationViewModel: ObservableObject {
     // Liefert alle Feiertage, die NICHT in den Schulferien liegen
     var filteredPublicHolidays: [SchoolHoliday] {
         let schoolPeriods = schoolHolidays.compactMap { holiday -> DateInterval? in
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { return nil }
+            let start = holiday.startDateObject
+            let end = holiday.endDateObject
             return DateInterval(start: start, end: end)
         }
         return publicHolidays.filter { holiday in
-            guard let date = holiday.startDateObject else { return false }
+            let date = holiday.startDateObject
             // Feiertage, die NICHT in einen Ferienzeitraum fallen
             return !schoolPeriods.contains { $0.contains(date) }
         }
@@ -483,7 +421,6 @@ class VacationViewModel: ObservableObject {
                 return fd
             }
             children[childIndex] = updatedChild
-            print("[DEBUG] addFreeDay: Kind=\(updatedChild.name), Tag=\(normalizedDate)")
         }
     }
 
@@ -518,7 +455,8 @@ class VacationViewModel: ObservableObject {
         let calendar = Calendar.current
         var unattended: [Date] = []
         for holiday in schoolHolidays {
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { continue }
+            let start = holiday.startDateObject
+            let end = holiday.endDateObject
             var current = start
             while current <= end {
                 let isWeekend = calendar.isDateInWeekend(current)
@@ -543,20 +481,16 @@ class VacationViewModel: ObservableObject {
     
     /// Prüft, ob sich die Zeiträume zweier Ferien überlappen
     private func datesOverlap(_ h1: SchoolHoliday, _ h2: SchoolHoliday) -> Bool {
-        guard let s1 = h1.startDateObject,
-              let e1 = h1.endDateObject else {
-            return false
-        }
-        guard let s2 = h2.startDateObject,
-              let e2 = h2.endDateObject else {
-            return false
-        }
+        let s1 = h1.startDateObject
+        let e1 = h1.endDateObject
+        let s2 = h2.startDateObject
+        let e2 = h2.endDateObject
         return max(s1, s2) <= min(e1, e2)
     }
     /// Gibt ein zusammengefasstes Ferienobjekt zurück (frühester Start, spätestes Ende, Name etc. bleibt gleich)
     private func mergeHolidays(_ h1: SchoolHoliday, _ h2: SchoolHoliday) -> SchoolHoliday {
-        let start = min(h1.startDateObject ?? Date.distantFuture, h2.startDateObject ?? Date.distantFuture)
-        let end = max(h1.endDateObject ?? Date.distantPast, h2.endDateObject ?? Date.distantPast)
+        let start = min(h1.startDateObject, h2.startDateObject)
+        let end = max(h1.endDateObject, h2.endDateObject)
         let startDate = DateFormatter.apiDateFormatter.string(from: start)
         let endDate = DateFormatter.apiDateFormatter.string(from: end)
         return SchoolHoliday(
@@ -574,7 +508,10 @@ class VacationViewModel: ObservableObject {
     
     /// Prüft, ob zwei Ferien direkt aneinandergrenzen
     private func datesTouch(_ a: SchoolHoliday, _ b: SchoolHoliday) -> Bool {
-        guard let aEnd = a.endDateObject, let bStart = b.startDateObject, let bEnd = b.endDateObject, let aStart = a.startDateObject else { return false }
+        let aEnd = a.endDateObject
+        let bStart = b.startDateObject
+        let bEnd = b.endDateObject
+        let aStart = a.startDateObject
         return Calendar.current.isDate(aEnd.addingTimeInterval(60*60*24), inSameDayAs: bStart) || Calendar.current.isDate(bEnd.addingTimeInterval(60*60*24), inSameDayAs: aStart)
     }
     
@@ -600,7 +537,6 @@ class VacationViewModel: ObservableObject {
     
     // MARK: - Dashboard Statistiken für ein Kalenderjahr
     func workdays(in year: Int) -> Int {
-        print("[DEBUG] workdays for year", year, "schoolHolidays count:", schoolHolidays.count, "filteredSchoolHolidays count:", filteredSchoolHolidays.count, "publicHolidays count:", publicHolidays.count)
         let calendar = Calendar.current
         var count = 0
         var date = calendar.date(from: DateComponents(year: year, month: 1, day: 1))!
@@ -614,25 +550,24 @@ class VacationViewModel: ObservableObject {
     }
 
     func publicHolidayCount(in year: Int) -> Int {
-        print("[DEBUG] publicHolidayCount for year", year, "publicHolidays count:", publicHolidays.count)
         let holidays = publicHolidays.filter {
-            guard let d = $0.startDateObject else { return false }
+            let d = $0.startDateObject
             return Calendar.current.component(.year, from: d) == year
         }
         let uniqueDays = Set(holidays.compactMap { $0.startDateObject })
-        print("[DEBUG] publicHolidayCount uniqueDays:", uniqueDays.count)
         return uniqueDays.count
     }
 
     func vacationDaysIncludingHolidays(in year: Int) -> Int {
-        print("[DEBUG] vacationDaysIncludingHolidays for year", year, "filteredSchoolHolidays count:", filteredSchoolHolidays.count)
         let holidays = filteredSchoolHolidays.filter {
-            guard let s = $0.startDateObject, let e = $0.endDateObject else { return false }
+            let s = $0.startDateObject
+            let e = $0.endDateObject
             return Calendar.current.component(.year, from: s) == year || Calendar.current.component(.year, from: e) == year
         }
         var days = Set<Date>()
         for holiday in holidays {
-            guard let s = holiday.startDateObject, let e = holiday.endDateObject else { continue }
+            let s = holiday.startDateObject
+            let e = holiday.endDateObject
             var date = max(s, Calendar.current.date(from: DateComponents(year: year, month: 1, day: 1))!)
             let endDate = min(e, Calendar.current.date(from: DateComponents(year: year, month: 12, day: 31))!)
             while date <= endDate {
@@ -640,25 +575,27 @@ class VacationViewModel: ObservableObject {
                 date = Calendar.current.date(byAdding: .day, value: 1, to: date)!
             }
         }
-        print("[DEBUG] vacationDaysIncludingHolidays unique days:", days.sorted().map { DateFormatter.apiDateFormatter.string(from: $0) })
-        print("[DEBUG] vacationDaysIncludingHolidays count for year", year, ":", days.count)
         return days.count
     }
 
     func vacationWorkdaysExcludingHolidays(in year: Int) -> Int {
-        print("[DEBUG] vacationWorkdaysExcludingHolidays for year", year, "filteredSchoolHolidays count:", filteredSchoolHolidays.count, "publicHolidays count:", publicHolidays.count)
         let calendar = utcCalendar
-        let holidays = filteredSchoolHolidays.filter {
-            guard let s = $0.startDateObject, let e = $0.endDateObject else { return false }
+        let filteredSchoolHolidays = schoolHolidays.filter {
+            let s = $0.startDateObject
+            let e = $0.endDateObject
             return calendar.component(.year, from: s) == year || calendar.component(.year, from: e) == year
         }
         // Alle relevanten Werktage in den Ferien (Mo-Fr, ohne Feiertage)
-        let publicHolidaySet = Set(publicHolidays.compactMap { $0.startDateObject }.map { calendar.startOfDay(for: $0) }.filter { calendar.component(.year, from: $0) == year })
+        let publicHolidaySet: Set<Date> = Set(publicHolidays.compactMap { h -> Date? in
+            let d = h.startDateObject
+            return calendar.component(.year, from: d) == year ? d : nil
+        })
         var allVacationDays = Set<Date>()
-        for holiday in holidays {
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { continue }
-            var date = calendar.startOfDay(for: start)
-            let endDay = calendar.startOfDay(for: end)
+        for holiday in filteredSchoolHolidays {
+            let s = holiday.startDateObject
+            let e = holiday.endDateObject
+            var date = calendar.startOfDay(for: s)
+            let endDay = calendar.startOfDay(for: e)
             while date <= endDay {
                 let weekday = calendar.component(.weekday, from: date)
                 if weekday != 1 && weekday != 7 && calendar.component(.year, from: date) == year && !publicHolidaySet.contains(date) {
@@ -667,20 +604,7 @@ class VacationViewModel: ObservableObject {
                 date = calendar.date(byAdding: .day, value: 1, to: date)!
             }
         }
-        let vacationDayCount = allVacationDays.count
-        print("[DEBUG] alleFerienWerktage (max 20):", Array(allVacationDays.sorted().prefix(20)).map { String(describing: $0) }, "... total count:", vacationDayCount)
-
-        // Alle FreeDays aller Kinder im Jahr
-        let allChildFreeDays = children.flatMap { $0.freeDays }
-            .map { calendar.startOfDay(for: $0.date) }
-            .filter { calendar.component(.year, from: $0) == year }
-        let abgedeckteTage = Set(allChildFreeDays)
-        print("[DEBUG] abgedeckteTage (durch FreeDays der Kinder, max 20):", Array(abgedeckteTage.sorted().prefix(20)).map { String(describing: $0) }, "... total count:", abgedeckteTage.count)
-
-        // Nur die Werktage, die NICHT durch FreeDays abgedeckt sind, zählen
-        let relevanteTage = allVacationDays.subtracting(abgedeckteTage)
-        print("[DEBUG] relevanteTage (zu betreuen, max 20):", Array(relevanteTage.sorted().prefix(20)).map { String(describing: $0) }, "... total count:", relevanteTage.count)
-        print("[DEBUG] vacationWorkdaysExcludingHolidays count for year", year, ":", relevanteTage.count)
+        let relevanteTage = allVacationDays.subtracting(Set(children.flatMap { $0.freeDays }.map { calendar.startOfDay(for: $0.date) }.filter { calendar.component(.year, from: $0) == year }))
         return relevanteTage.count
     }
     
@@ -691,12 +615,11 @@ class VacationViewModel: ObservableObject {
         let calendar = utcCalendar
         var yearCounts: [Int: Int] = [:]
         // Bundesland-Code für Filterung
-        let bundeslandCode = selectedState.rawValue.lowercased()
+        let bundeslandCode = selectedState.stateCode // z.B. "BY"
         // Nur bundesweite oder für das aktuelle Bundesland gültige Feiertage
         let filteredHolidays = publicHolidays.filter { ph in
             if ph.nationwide == true { return true }
-            // subdivisions: ["BY", "NW", ...] => muss Bundesland enthalten
-            if let subs = ph.subdivisions, subs.map({ $0.lowercased() }).contains(bundeslandCode) { return true }
+            if let subs = ph.subdivisions, subs.contains(where: { $0.code.uppercased() == bundeslandCode }) { return true }
             return false
         }
         for vacation in parent.vacationDays {
@@ -704,7 +627,8 @@ class VacationViewModel: ObservableObject {
             let weekday = calendar.component(.weekday, from: date)
             let isWorkday = weekday >= 2 && weekday <= 6 // Mo-Fr
             let isHoliday = filteredHolidays.contains { ph in
-                guard let s = ph.startDateObject, let e = ph.endDateObject else { return false }
+                let s = ph.startDateObject
+                let e = ph.endDateObject
                 return date >= calendar.startOfDay(for: s) && date <= calendar.startOfDay(for: e)
             }
             if isWorkday && !isHoliday {
@@ -724,7 +648,6 @@ class VacationViewModel: ObservableObject {
         do {
             return try encoder.encode(exportStruct)
         } catch {
-            print("[Export] Fehler beim Kodieren: \(error)")
             return nil
         }
     }
@@ -740,7 +663,6 @@ class VacationViewModel: ObservableObject {
             self.publicHolidays = importStruct.publicHolidays
             self.children = importStruct.children
         } catch {
-            print("[Import] Fehler beim Dekodieren: \(error)")
         }
     }
 
@@ -750,7 +672,10 @@ class VacationViewModel: ObservableObject {
         // 1. Ferien-Werktage (Mo-Fr, keine Feiertage)
         let ferienWerktage = self.vacationWorkdaysExcludingHolidaysRaw(in: year)
         // 2. Feiertage (als Date-Set, UTC-normalisiert!)
-        let feiertageSet: Set<Date> = Set(publicHolidays.compactMap { $0.startDateObject }.map { calendar.startOfDay(for: $0) }.filter { calendar.component(.year, from: $0) == year })
+        let feiertageSet: Set<Date> = Set(publicHolidays.compactMap { h -> Date? in
+            let d = h.startDateObject
+            return calendar.component(.year, from: d) == year ? d : nil
+        })
         // 3. Alle FreeDays aller Kinder im Jahr (UTC-normalisiert!)
         let alleFreeDays = children.flatMap { $0.freeDays }
             .map { calendar.startOfDay(for: $0.date) }
@@ -758,9 +683,6 @@ class VacationViewModel: ObservableObject {
         // 4. Zusätzliche FreeDays, die NICHT auf Ferien-Werktag und NICHT auf Feiertag liegen
         let ferienWerktageSet = Set(ferienWerktage.map { calendar.startOfDay(for: $0) })
         let zusaetzlicheFreeDays = alleFreeDays.filter { !ferienWerktageSet.contains($0) && !feiertageSet.contains($0) }
-        // Debug-Ausgaben
-        print("[DEBUG][totalBetreuungstageMitZusatzFreieTage] Ferien-Werktage: \(ferienWerktage.count)")
-        print("[DEBUG][totalBetreuungstageMitZusatzFreieTage] Zusätzliche FreeDays: \(zusaetzlicheFreeDays.sorted()) (\(zusaetzlicheFreeDays.count))")
         return ferienWerktage.count + zusaetzlicheFreeDays.count
     }
 
@@ -768,34 +690,39 @@ class VacationViewModel: ObservableObject {
     func vacationWorkdaysExcludingHolidaysRaw(in year: Int) -> [Date] {
         let calendar = utcCalendar
         let filteredSchoolHolidays = schoolHolidays.filter {
-            guard let s = $0.startDateObject, let e = $0.endDateObject else { return false }
+            let s = $0.startDateObject
+            let e = $0.endDateObject
             return calendar.component(.year, from: s) == year || calendar.component(.year, from: e) == year
         }
+        // Alle relevanten Werktage in den Ferien (Mo-Fr, ohne Feiertage)
+        let publicHolidaySet: Set<Date> = Set(publicHolidays.compactMap { h -> Date? in
+            let d = h.startDateObject
+            return calendar.component(.year, from: d) == year ? d : nil
+        })
         var allVacationDays = Set<Date>()
-        let feiertageSet: Set<Date> = Set(publicHolidays.compactMap { $0.startDateObject }.map { calendar.startOfDay(for: $0) }.filter { calendar.component(.year, from: $0) == year })
         for holiday in filteredSchoolHolidays {
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { continue }
-            var date = calendar.startOfDay(for: start)
-            let endDay = calendar.startOfDay(for: end)
+            let s = holiday.startDateObject
+            let e = holiday.endDateObject
+            var date = calendar.startOfDay(for: s)
+            let endDay = calendar.startOfDay(for: e)
             while date <= endDay {
                 let weekday = calendar.component(.weekday, from: date)
-                let normalized = calendar.startOfDay(for: date)
-                if weekday != 1 && weekday != 7 && calendar.component(.year, from: normalized) == year && !feiertageSet.contains(normalized) {
-                    allVacationDays.insert(normalized)
+                if weekday != 1 && weekday != 7 && calendar.component(.year, from: date) == year && !publicHolidaySet.contains(date) {
+                    allVacationDays.insert(date)
                 }
                 date = calendar.date(byAdding: .day, value: 1, to: date)!
             }
         }
         let result = Array(allVacationDays).sorted()
-        print("[DEBUG][vacationWorkdaysExcludingHolidaysRaw] Werktage: \(result)")
         return result
     }
 
     /// Gibt die Anzahl der schulfreien Werktage (Mo-Fr, ohne Feiertage) für ein Jahr zurück
     func schoolFreeDaysCount(in year: Int) -> Int {
         return schoolHolidays.reduce(0) { sum, holiday in
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { return sum }
-            return sum + countSchoolFreeWeekdays(start: start, end: end, publicHolidays: publicHolidays, filterYear: year)
+            let s = holiday.startDateObject
+            let e = holiday.endDateObject
+            return sum + countSchoolFreeWeekdays(start: s, end: e, publicHolidays: publicHolidays, filterYear: year)
         }
     }
 
@@ -803,11 +730,9 @@ class VacationViewModel: ObservableObject {
     func schoolFreeDaysFromHolidayView(in year: Int) -> Int {
         let holidaysForYear = deduplicatedSchoolHolidays(for: year)
         return holidaysForYear.reduce(0) { sum, holiday in
-            if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                return sum + countSchoolFreeWeekdays(start: start, end: end, publicHolidays: publicHolidays, filterYear: year)
-            } else {
-                return sum
-            }
+            let s = holiday.startDateObject
+            let e = holiday.endDateObject
+            return sum + countSchoolFreeWeekdays(start: s, end: e, publicHolidays: publicHolidays, filterYear: year)
         }
     }
 
@@ -830,9 +755,10 @@ class VacationViewModel: ObservableObject {
         let calendar = Calendar.current
         // 1. Filter: Nur Ferien, die ganz oder teilweise im Jahr liegen
         let holidaysInYear = schoolHolidays.filter { holiday in
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { return false }
-            let startYear = calendar.component(.year, from: start)
-            let endYear = calendar.component(.year, from: end)
+            let s = holiday.startDateObject
+            let e = holiday.endDateObject
+            let startYear = calendar.component(.year, from: s)
+            let endYear = calendar.component(.year, from: e)
             return startYear == year || endYear == year
         }
         // 2. Deduplizieren: Nach id + Start/Ende
@@ -857,13 +783,8 @@ class VacationViewModel: ObservableObject {
         let end = calendar.date(from: DateComponents(year: year, month: 12, day: 31))!
         // Nur Feiertage ohne regionale Einschränkung (bundesweit/landesweit)
         let feiertage: Set<Date> = Set(publicHolidays.compactMap { h -> Date? in
-            guard let d = h.startDateObject, calendar.component(.year, from: d) == year else { return nil }
-            // Nur Feiertage ohne subdivisions oder mit subdivisions, die den Bundesland-Code enthalten
-            if let subs = h.subdivisions, !subs.isEmpty, !subs.contains(where: { $0.code == selectedState.stateCode }) {
-                return nil // regional, nicht landesweit
-            }
-            let weekday = calendar.component(.weekday, from: d)
-            return (weekday >= 2 && weekday <= 6) ? d : nil
+            let d = h.startDateObject
+            return calendar.component(.year, from: d) == year ? d : nil
         })
         while date <= end {
             let weekday = calendar.component(.weekday, from: date)
@@ -875,34 +796,5 @@ class VacationViewModel: ObservableObject {
             date = calendar.date(byAdding: .day, value: 1, to: date)!
         }
         return count
-    }
-    
-    /// Gibt die Werktage (Mo-Fr, ohne Feiertage) eines Elternteils im Jahr gruppiert nach Kalenderjahr zurück
-    func vacationWorkdaysPerYear(for parent: Parent) -> [Int: Int] {
-        let calendar = utcCalendar
-        var yearCounts: [Int: Int] = [:]
-        // Bundesland-Code für Filterung
-        let bundeslandCode = selectedState.rawValue.lowercased()
-        // Nur bundesweite oder für das aktuelle Bundesland gültige Feiertage
-        let filteredHolidays = publicHolidays.filter { ph in
-            if ph.nationwide == true { return true }
-            // subdivisions: ["BY", "NW", ...] => muss Bundesland enthalten
-            if let subs = ph.subdivisions, subs.map({ $0.lowercased() }).contains(bundeslandCode) { return true }
-            return false
-        }
-        for vacation in parent.vacationDays {
-            let date = calendar.startOfDay(for: vacation.date)
-            let weekday = calendar.component(.weekday, from: date)
-            let isWorkday = weekday >= 2 && weekday <= 6 // Mo-Fr
-            let isHoliday = filteredHolidays.contains { ph in
-                guard let s = ph.startDateObject, let e = ph.endDateObject else { return false }
-                return date >= calendar.startOfDay(for: s) && date <= calendar.startOfDay(for: e)
-            }
-            if isWorkday && !isHoliday {
-                let year = calendar.component(.year, from: date)
-                yearCounts[year, default: 0] += 1
-            }
-        }
-        return yearCounts
     }
 }

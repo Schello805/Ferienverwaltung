@@ -5,13 +5,16 @@ struct PublicHolidayListView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     
+    // Verwende einen statischen Formatter für Performance und Sicherheit
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.locale = Locale(identifier: "de_DE")
+        return formatter
+    }()
+    
     var body: some View {
-        let dateFormatter: DateFormatter = {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            formatter.locale = Locale(identifier: "de_DE")
-            return formatter
-        }()
+        let dateFormatter = Self.dateFormatter
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
                 // Hinweistext ganz oben, außerhalb der List
@@ -31,15 +34,13 @@ struct PublicHolidayListView: View {
                             VStack(alignment: .leading) {
                                 Text(holiday.holidayName)
                                     .font(.headline)
-                                if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                    Text("\(dateFormatter.string(from: start)) bis \(dateFormatter.string(from: end))")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    Text("\(holiday.start) bis \(holiday.end)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
+                                let start = holiday.startDateObject
+                                let end = holiday.endDateObject
+                                // Optional: Prüfe auf Fallback-Werte
+                                // if start == Date.distantPast || end == Date.distantFuture { return }
+                                Text("\(dateFormatter.string(from: start)) bis \(dateFormatter.string(from: end))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
                             }
                         }
                     }

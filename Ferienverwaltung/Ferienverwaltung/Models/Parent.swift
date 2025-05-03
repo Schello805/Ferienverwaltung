@@ -72,26 +72,39 @@ struct VacationDay: Identifiable, Codable, Hashable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         type = try container.decode(VacationType.self, forKey: .type)
-        // Datum als String im Format "yyyy-MM-dd"
         let dateString = try container.decode(String.self, forKey: .date)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone.current
-        guard let parsedDate = formatter.date(from: dateString) else {
-            throw DecodingError.dataCorruptedError(forKey: .date, in: container, debugDescription: "Ungültiges Datumsformat: \(dateString)")
-        }
-        self.date = parsedDate
+        self.date = Self.safeParseDate(dateString) ?? Date.distantPast
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(type, forKey: .type)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone.current
-        let dateString = formatter.string(from: date)
+        let dateString = Self.formatDate(date)
         try container.encode(dateString, forKey: .date)
+    }
+
+    static func safeParseDate(_ string: String, format: String = "yyyy-MM-dd") -> Date? {
+        guard !string.isEmpty else {
+            print("[VacationDay] Date string is empty")
+            return nil
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        formatter.timeZone = TimeZone.current
+        if let date = formatter.date(from: string) {
+            return date
+        } else {
+            print("[VacationDay] Invalid date string: \(string)")
+            return nil
+        }
+    }
+
+    static func formatDate(_ date: Date, format: String = "yyyy-MM-dd") -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        formatter.timeZone = TimeZone.current
+        return formatter.string(from: date)
     }
 
     static func == (lhs: VacationDay, rhs: VacationDay) -> Bool {

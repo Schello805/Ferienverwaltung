@@ -82,6 +82,9 @@ struct EditParentSheet: View {
                     }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 24)
+        }
         .sheet(isPresented: $showImagePicker) {
             ImagePicker(image: $profileImage)
         }
@@ -164,10 +167,12 @@ struct EditParentSheet: View {
             current = calendar.date(byAdding: .day, value: 1, to: current) ?? current
         }
     }
-    private var dateFormatter: DateFormatter {
+    // Verwende einen statischen Formatter für Performance und Sicherheit
+    private static let dateFormatter: DateFormatter = {
         let df = DateFormatter()
         df.dateStyle = .medium
         df.locale = Locale(identifier: "de_DE")
         return df
-    }
+    }()
+    private var dateFormatter: DateFormatter { Self.dateFormatter }
 }

@@ -29,8 +29,10 @@ struct HolidayListItemView: View {
         var unattended = 0
         let calendar = Calendar.current
         
-        guard let start = holiday.startDateObject,
-              let end = holiday.endDateObject else { return (0, 0) }
+        let start = holiday.startDateObject
+        let end = holiday.endDateObject
+        // Optional: Prüfe auf Fallback-Werte, falls nötig
+        // if start == Date.distantPast || end == Date.distantFuture { return (0, 0) }
         
         var currentDate = start
         while currentDate <= end {
@@ -77,35 +79,37 @@ struct HolidayListItemView: View {
                     }
                 }
                 
-                if let start = holiday.startDateObject,
-                   let end = holiday.endDateObject {
-                    HStack {
-                        Text("\(dateFormatter.string(from: start)) - \(dateFormatter.string(from: end))")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("\(days.total) \(days.total == 1 ? "Tag" : "Tage")")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    // Fortschrittsbalken für betreute Tage
-                    if days.total > 0 {
-                        GeometryReader { geometry in
-                            ZStack(alignment: .leading) {
-                                Rectangle()
-                                    .frame(width: geometry.size.width, height: 8)
-                                    .opacity(0.2)
-                                    .foregroundColor(.gray)
-                                
-                                Rectangle()
-                                    .frame(width: geometry.size.width * CGFloat(days.total - days.unattended) / CGFloat(days.total), height: 8)
-                                    .foregroundColor(.green)
-                            }
-                            .cornerRadius(4)
+                let start = holiday.startDateObject
+                let end = holiday.endDateObject
+                // Optional: Prüfe auf Fallback-Werte
+                // if start == Date.distantPast || end == Date.distantFuture { continue }
+                
+                HStack {
+                    Text("\(dateFormatter.string(from: start)) - \(dateFormatter.string(from: end))")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(days.total) \(days.total == 1 ? "Tag" : "Tage")")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Fortschrittsbalken für betreute Tage
+                if days.total > 0 {
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .frame(width: geometry.size.width, height: 8)
+                                .opacity(0.2)
+                                .foregroundColor(.gray)
+                            
+                            Rectangle()
+                                .frame(width: geometry.size.width * CGFloat(days.total - days.unattended) / CGFloat(days.total), height: 8)
+                                .foregroundColor(.green)
                         }
-                        .frame(height: 8)
+                        .cornerRadius(4)
                     }
+                    .frame(height: 8)
                 }
             }
             .padding(.vertical, 4)
@@ -136,8 +140,10 @@ struct HolidayDetailView: View {
         var days = [Date]()
         let calendar = Calendar.current
         
-        guard let start = holiday.startDateObject,
-              let end = holiday.endDateObject else { return [] }
+        let start = holiday.startDateObject
+        let end = holiday.endDateObject
+        // Optional: Prüfe auf Fallback-Werte
+        // if start == Date.distantPast || end == Date.distantFuture { return [] }
         
         var currentDate = start
         while currentDate <= end {
@@ -158,60 +164,62 @@ struct HolidayDetailView: View {
         
         List {
             Section {
-                if let start = holiday.startDateObject,
-                   let end = holiday.endDateObject {
-                    HStack {
-                        Text("Zeitraum:")
-                        Spacer()
-                        Text("\(dateFormatter.string(from: start)) - \(dateFormatter.string(from: end))")
-                    }
-                    
-                    HStack {
-                        Text("Gesamttage:")
-                        Spacer()
-                        Text("\(totalDays)")
-                    }
-                    
-                    HStack {
-                        Text("Betreute Tage:")
-                        Spacer()
-                        Text("\(betreut)")
-                            .foregroundColor(.green)
-                    }
-                    
-                    HStack {
-                        Text("Unbetreute Tage:")
-                        Spacer()
-                        Text("\(unbetreut)")
-                            .foregroundColor(unbetreut > 0 ? .red : .green)
-                    }
-                    
-                    // Fortschrittsbalken
-                    if totalDays > 0 {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Betreuungsstatus:")
-                            GeometryReader { geometry in
-                                ZStack(alignment: .leading) {
-                                    Rectangle()
-                                        .frame(width: geometry.size.width, height: 20)
-                                        .opacity(0.2)
-                                        .foregroundColor(.gray)
-                                    
-                                    Rectangle()
-                                        .frame(width: totalDays > 0 ? geometry.size.width * CGFloat(betreut) / CGFloat(totalDays) : 0, height: 20)
-                                        .foregroundColor(.green)
-                                }
-                                .cornerRadius(4)
-                                .overlay(
-                                    Text("\(totalDays > 0 ? Int(Double(betreut) / Double(totalDays) * 100) : 0)%")
-                                        .font(.caption)
-                                        .foregroundColor(.white)
-                                        .padding(.leading, 8),
-                                    alignment: .leading
-                                )
+                let start = holiday.startDateObject
+                let end = holiday.endDateObject
+                // Optional: Prüfe auf Fallback-Werte
+                // if start == Date.distantPast || end == Date.distantFuture { continue }
+                
+                HStack {
+                    Text("Zeitraum:")
+                    Spacer()
+                    Text("\(dateFormatter.string(from: start)) - \(dateFormatter.string(from: end))")
+                }
+                
+                HStack {
+                    Text("Gesamttage:")
+                    Spacer()
+                    Text("\(totalDays)")
+                }
+                
+                HStack {
+                    Text("Betreute Tage:")
+                    Spacer()
+                    Text("\(betreut)")
+                        .foregroundColor(.green)
+                }
+                
+                HStack {
+                    Text("Unbetreute Tage:")
+                    Spacer()
+                    Text("\(unbetreut)")
+                        .foregroundColor(unbetreut > 0 ? .red : .green)
+                }
+                
+                // Fortschrittsbalken
+                if totalDays > 0 {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Betreuungsstatus:")
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                Rectangle()
+                                    .frame(width: geometry.size.width, height: 20)
+                                    .opacity(0.2)
+                                    .foregroundColor(.gray)
+                                
+                                Rectangle()
+                                    .frame(width: totalDays > 0 ? geometry.size.width * CGFloat(betreut) / CGFloat(totalDays) : 0, height: 20)
+                                    .foregroundColor(.green)
                             }
-                            .frame(height: 20)
+                            .cornerRadius(4)
+                            .overlay(
+                                Text("\(totalDays > 0 ? Int(Double(betreut) / Double(totalDays) * 100) : 0)%")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                    .padding(.leading, 8),
+                                alignment: .leading
+                            )
                         }
+                        .frame(height: 20)
                     }
                 }
             }
@@ -268,38 +276,148 @@ struct HolidayDetailView: View {
 
 struct ContentView: View {
     @StateObject var viewModel = VacationViewModel()
-    @State private var selectedTab = 0
+    enum MainSection: Int, CaseIterable, Identifiable {
+        case dashboard, family, holidays, settings
+        var id: Int { rawValue }
+        var title: String {
+            switch self {
+            case .dashboard: return "Dashboard"
+            case .family: return "Familie"
+            case .holidays: return "Ferien"
+            case .settings: return "Einstellungen"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .dashboard: return "house.fill"
+            case .family: return "person.2.fill"
+            case .holidays: return "calendar"
+            case .settings: return "gear"
+            }
+        }
+    }
+    @State private var selectedSection: MainSection = .dashboard
     @State private var isAddParentSheetPresented = false
     @State private var isSettingsPresented = false
     @State private var newParentName = ""
-    
+    @State private var showSplash = true
+    @State private var showErrorAlert = false
+
     var body: some View {
-        VStack {
-            TabView(selection: $selectedTab) {
-                DashboardView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Dashboard", systemImage: "house.fill")
+        ZStack {
+            if showSplash {
+                SplashScreenView(isActive: $showSplash)
+            } else {
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    VStack(spacing: 0) {
+                        HStack(spacing: 16) {
+                            ForEach(MainSection.allCases) { section in
+                                Button(action: { selectedSection = section }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: section.icon)
+                                        Text(section.title)
+                                    }
+                                    .font(.system(size: 16, weight: selectedSection == section ? .bold : .regular))
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 14)
+                                    .background(selectedSection == section ? Color.accentColor.opacity(0.13) : Color.clear)
+                                    .cornerRadius(12)
+                                }
+                                .foregroundColor(selectedSection == section ? .accentColor : .primary)
+                            }
+                        }
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                        Group {
+                            switch selectedSection {
+                            case .dashboard:
+                                NavigationStack {
+                                    DashboardView(viewModel: viewModel)
+                                }
+                            case .family:
+                                NavigationStack {
+                                    VacationView(viewModel: viewModel)
+                                }
+                            case .holidays:
+                                NavigationStack {
+                                    HolidaysView(viewModel: viewModel)
+                                }
+                            case .settings:
+                                NavigationStack {
+                                    SettingsView(viewModel: viewModel)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .tag(0)
-                VacationView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Familie", systemImage: "person.2.fill")
+                    .onAppear {
+                        Task {
+                            await viewModel.updateHolidayCacheIfNeeded()
+                            viewModel.scheduleUnattendedHolidayNotifications()
+                        }
                     }
-                    .tag(1)
-                HolidaysView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Ferien", systemImage: "calendar")
+                    .alert(isPresented: $showErrorAlert) {
+                        Alert(
+                            title: Text("Fehler beim Laden der Daten"),
+                            message: Text(viewModel.error ?? "Unbekannter Fehler. Bitte Internetverbindung prüfen und App neu starten."),
+                            dismissButton: .default(Text("OK"))
+                        )
                     }
-                    .tag(2)
-                SettingsView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Einstellungen", systemImage: "gear")
+                    .onChange(of: viewModel.error) { _, _ in
+                        showErrorAlert = viewModel.error != nil
                     }
-                    .tag(3)
+                    .onChange(of: viewModel.error) { _, _ in
+                        showErrorAlert = viewModel.error != nil
+                    }
+                } else {
+                    TabView(selection: $selectedSection) {
+                        NavigationStack {
+                            DashboardView(viewModel: viewModel)
+                        }
+                        .tabItem {
+                            Label("Dashboard", systemImage: "house.fill")
+                        }
+                        .tag(MainSection.dashboard)
+                        NavigationStack {
+                            VacationView(viewModel: viewModel)
+                        }
+                            .tabItem {
+                                Label("Familie", systemImage: "person.2.fill")
+                            }
+                            .tag(MainSection.family)
+                        NavigationStack {
+                            HolidaysView(viewModel: viewModel)
+                        }
+                            .tabItem {
+                                Label("Ferien", systemImage: "calendar")
+                            }
+                            .tag(MainSection.holidays)
+                        NavigationStack {
+                            SettingsView(viewModel: viewModel)
+                        }
+                            .tabItem {
+                                Label("Einstellungen", systemImage: "gear")
+                            }
+                            .tag(MainSection.settings)
+                    }
+                    .onAppear {
+                        Task {
+                            await viewModel.updateHolidayCacheIfNeeded()
+                            viewModel.scheduleUnattendedHolidayNotifications()
+                        }
+                    }
+                    .alert(isPresented: $showErrorAlert) {
+                        Alert(
+                            title: Text("Fehler beim Laden der Daten"),
+                            message: Text(viewModel.error ?? "Unbekannter Fehler. Bitte Internetverbindung prüfen und App neu starten."),
+                            dismissButton: .default(Text("OK"))
+                        )
+                    }
+                    .onChange(of: viewModel.error) { _, _ in
+                        showErrorAlert = viewModel.error != nil
+                    }
+                }
             }
-        }
-        .onAppear {
-            viewModel.scheduleUnattendedHolidayNotifications()
         }
     }
 }

@@ -4,107 +4,106 @@ struct HolidaysView: View {
     @ObservedObject var viewModel: VacationViewModel
     @State private var selectedTab = 0 // 0: Schulferien, 1: Feiertage
     var body: some View {
-        NavigationView {
-            VStack {
-                Picker("Ansicht", selection: $selectedTab) {
-                    Text("Schulferien").tag(0)
-                    Text("Feiertage").tag(1)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding([.top, .horizontal])
-
-                List {
-                    if selectedTab == 0 {
-                        // Jahr-Gruppierung aller Schulferien
-                        ForEach(groupedHolidays().sorted(by: { $0.key < $1.key }), id: \ .key) { year, holidays in
-                            // Berechne die Gesamtzahl der schulfreien Werktage für dieses Jahr
-                            let totalSchoolFreeDays = holidays.reduce(0) { sum, holiday in
-                                if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                    return sum + countSchoolFreeWeekdays(start: start, end: end, publicHolidays: viewModel.publicHolidays, filterYear: year)
-                                } else {
-                                    return sum
-                                }
+        VStack(spacing: 0) {
+            Picker("Ansicht", selection: $selectedTab) {
+                Text("Schulferien").tag(0)
+                Text("Feiertage").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            List {
+                if selectedTab == 0 {
+                    // Jahr-Gruppierung aller Schulferien
+                    ForEach(groupedHolidays().sorted(by: { $0.key < $1.key }), id: \ .key) { year, holidays in
+                        // Berechne die Gesamtzahl der schulfreien Werktage für dieses Jahr
+                        let totalSchoolFreeDays = holidays.reduce(0) { sum, holiday in
+                            let start = holiday.startDateObject
+                            let end = holiday.endDateObject
+                            // Optional: Prüfe auf Fallback-Werte
+                            // if start == Date.distantPast || end == Date.distantFuture { return sum }
+                            return sum + countSchoolFreeWeekdays(start: start, end: end, publicHolidays: viewModel.publicHolidays, filterYear: year)
+                        }
+                        Section(header:
+                            HStack {
+                                Text("Schulferien \(String(format: "%04d", year))")
+                                Spacer()
+                                Text("Gesamt: \(totalSchoolFreeDays) Tage")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
                             }
-                            Section(header:
-                                HStack {
-                                    Text("Schulferien \(String(format: "%04d", year))")
-                                    Spacer()
-                                    Text("Gesamt: \(totalSchoolFreeDays) Tage")
-                                        .font(.caption)
-                                        .foregroundColor(.blue)
-                                }
-                            ) {
-                                ForEach(holidays.sorted { ($0.startDateObject ?? Date.distantPast) < ($1.startDateObject ?? Date.distantPast) }, id: \.id) { holiday in
+                        ) {
+                            ForEach(holidays.sorted { $0.startDateObject < $1.startDateObject }, id: \.id) { holiday in
+                                NavigationLink(destination: HolidayDetailView(viewModel: viewModel, holiday: holiday)) {
                                     VStack(alignment: .leading) {
                                         HStack {
                                             Text(holiday.holidayName)
                                                 .font(.headline)
                                             Spacer()
-                                            if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                                let count = countSchoolFreeWeekdays(start: start, end: end, publicHolidays: viewModel.publicHolidays)
-                                                Text("\(count) Tage")
-                                                    .font(.caption)
-                                                    .foregroundColor(.blue)
-                                            }
+                                            let start = holiday.startDateObject
+                                            let end = holiday.endDateObject
+                                            // Optional: Prüfe auf Fallback-Werte
+                                            // if start == Date.distantPast || end == Date.distantFuture { return }
+                                            let count = countSchoolFreeWeekdays(start: start, end: end, publicHolidays: viewModel.publicHolidays)
+                                            Text("\(count) Tage")
+                                                .font(.caption)
+                                                .foregroundColor(.blue)
                                         }
-                                        if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                            Text("\(formatDate(start)) bis \(formatDate(end))")
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
-                                        }
+                                        let start = holiday.startDateObject
+                                        let end = holiday.endDateObject
+                                        // Optional: Prüfe auf Fallback-Werte
+                                        // if start == Date.distantPast || end == Date.distantFuture { return }
+                                        Text("\(formatDate(start)) bis \(formatDate(end))")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
                                     }
                                 }
                             }
                         }
+                    }
+                } else {
+                    // Jahr-Gruppierung aller relevanten Feiertage (nicht in Ferien)
+                    let holidaysToGroup = viewModel.publicHolidays
+                    let grouped = Dictionary(grouping: holidaysToGroup) { holiday in
+                        Calendar.current.component(.year, from: holiday.startDateObject)
+                    }.sorted(by: { $0.key < $1.key })
+                    if grouped.isEmpty {
+                        Text("Keine Feiertage gefunden.")
+                            .foregroundColor(.secondary)
+                            .padding()
                     } else {
-                        // Jahr-Gruppierung aller relevanten Feiertage (nicht in Ferien)
-                        let holidaysToGroup = viewModel.publicHolidays
-                        let grouped = Dictionary(grouping: holidaysToGroup) { holiday in
-                            Calendar.current.component(.year, from: holiday.startDateObject ?? Date())
-                        }.sorted(by: { $0.key < $1.key })
-                        if grouped.isEmpty {
-                            Text("Keine Feiertage gefunden.")
-                                .foregroundColor(.secondary)
-                                .padding()
-                        } else {
-                            Section(header:
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Feiertage")
-                                    Text("(Regionale Feiertage werden nicht für die Werktagsberechnung berücksichtigt)")
-                                        .font(.caption2)
-                                        .foregroundColor(.orange)
+                        Section(header:
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Feiertage")
+                                Text("(Regionale Feiertage werden nicht für die Werktagsberechnung berücksichtigt)")
+                                    .font(.caption2)
+                                    .foregroundColor(.orange)
+                            }
+                            .padding(.bottom, 4)
+                        ) {
+                            ForEach(grouped, id: \ .key) { year, holidays in
+                                // Berechne die Gesamtzahl der Feiertage (ohne Wochenenden, aber mit ggf. mehreren Feiertagen an Werktagen)
+                                let totalPublicHolidays = holidays.reduce(0) { sum, holiday in
+                                    let start = holiday.startDateObject
+                                    let end = holiday.endDateObject
+                                    return sum + countPublicHolidayWeekdays(start: start, end: end)
                                 }
-                                .padding(.bottom, 4)
-                            ) {
-                                ForEach(grouped, id: \ .key) { year, holidays in
-                                    // Berechne die Gesamtzahl der Feiertage (ohne Wochenenden, aber mit ggf. mehreren Feiertagen an Werktagen)
-                                    let totalPublicHolidays = holidays.reduce(0) { sum, holiday in
-                                        if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                            return sum + countPublicHolidayWeekdays(start: start, end: end)
-                                        } else {
-                                            return sum
-                                        }
+                                Section(header:
+                                    HStack {
+                                        Text("Feiertage \(String(format: "%04d", year))")
+                                        Spacer()
+                                        Text("Gesamt: \(totalPublicHolidays) Tage")
+                                            .font(.caption)
+                                            .foregroundColor(.blue)
                                     }
-                                    Section(header:
-                                        HStack {
-                                            Text("Feiertage \(String(format: "%04d", year))")
-                                            Spacer()
-                                            Text("Gesamt: \(totalPublicHolidays) Tage")
-                                                .font(.caption)
-                                                .foregroundColor(.blue)
-                                        }
-                                    ) {
-                                        ForEach(holidays) { holiday in
-                                            VStack(alignment: .leading) {
-                                                Text(holiday.holidayName)
-                                                    .font(.headline)
-                                                if let start = holiday.startDateObject, let end = holiday.endDateObject {
-                                                    Text("\(formatDate(start)) bis \(formatDate(end))")
-                                                        .font(.subheadline)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                                HolidayScopeInfoView(holiday: holiday)
-                                            }
+                                ) {
+                                    ForEach(holidays) { holiday in
+                                        VStack(alignment: .leading) {
+                                            Text(holiday.holidayName)
+                                                .font(.headline)
+                                            Text("\(formatDate(holiday.startDateObject)) bis \(formatDate(holiday.endDateObject))")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                            HolidayScopeInfoView(holiday: holiday)
                                         }
                                     }
                                 }
@@ -112,10 +111,28 @@ struct HolidaysView: View {
                         }
                     }
                 }
-                .listStyle(InsetGroupedListStyle())
             }
-            .navigationTitle("Ferien & Feiertage")
+            .listStyle(.insetGrouped)
         }
+        .navigationTitle("Ferienübersicht")
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Spacer()
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+        // .edgesIgnoringSafeArea(.all) // Entfernt, damit Titel nicht hinter Notch verschwindet
+    }
+    
+    // Verwende einen statischen Formatter für Performance und Sicherheit
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        return formatter
+    }()
+    
+    func formatDate(_ date: Date) -> String {
+        Self.dateFormatter.string(from: date)
     }
     
     func groupedHolidays() -> [Int: [SchoolHoliday]] {
@@ -123,7 +140,10 @@ struct HolidaysView: View {
         let calendar = Calendar.current
         // Immer das deduplizierte Array verwenden!
         for holiday in viewModel.filteredSchoolHolidays {
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { continue }
+            let start = holiday.startDateObject
+            let end = holiday.endDateObject
+            // Optional: Prüfe auf Fallback-Werte
+            // if start == Date.distantPast || end == Date.distantFuture { continue }
             let startYear = calendar.component(.year, from: start)
             let endYear = calendar.component(.year, from: end)
             if startYear == endYear {
@@ -148,8 +168,8 @@ struct HolidaysView: View {
         let calendar = Calendar.current
         let year = calendar.component(.year, from: start)
         let id = holiday.id + "-" + String(year)
-        let startDate = DateFormatter.apiDateFormatter.string(from: start)
-        let endDate = DateFormatter.apiDateFormatter.string(from: end)
+        let startDate = Self.dateFormatter.string(from: start)
+        let endDate = Self.dateFormatter.string(from: end)
         return SchoolHoliday(
             id: id,
             startDate: startDate,
@@ -161,12 +181,6 @@ struct HolidaysView: View {
             nationwide: holiday.nationwide,
             subdivisions: holiday.subdivisions
         )
-    }
-    
-    func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy"
-        return formatter.string(from: date)
     }
 }
 

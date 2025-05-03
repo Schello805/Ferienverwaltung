@@ -13,102 +13,110 @@ struct DashboardView: View {
     var sortedParents: [Parent] {
         viewModel.parents.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
-    var body: some View {
-        NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Dashboard")
-                    .font(.largeTitle).bold()
-                    .padding(.bottom, 6)
-                // Jahr-Auswahl
-                Picker("Jahr", selection: $selectedYear) {
-                    ForEach(availableYears, id: \.self) { year in
-                        Text(String(year)).tag(year)
-                    }
+    
+    private var dashboardContent: some View {
+        Group {
+            Text("Dashboard")
+                .font(.largeTitle).bold()
+                .padding(.bottom, 6)
+            // Jahr-Auswahl
+            Picker("Jahr", selection: $selectedYear) {
+                ForEach(availableYears, id: \.self) { year in
+                    Text(String(year)).tag(year)
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.bottom, 8)
-                .onChange(of: selectedYear) {
-                    viewModel.reloadSchoolHolidays()
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.bottom, 8)
+            .onChange(of: selectedYear) {
+                viewModel.reloadSchoolHolidays()
+            }
+            // --- Statistik-Block ---
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Jahr: " + String(selectedYear))
+                    .font(.title2)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 4)
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 16) {
+                    StatisticCard(
+                        icon: "briefcase",
+                        iconColor: .blue,
+                        title: "Werktage (Mo-Fr)",
+                        value: Text("\(viewModel.anzahlWerktageImJahr(selectedYear))"),
+                        infoText: "Gesamtanzahl der Werktage (Mo-Fr, ohne Wochenenden und Feiertage) im Jahr."
+                    )
+                    StatisticCard(
+                        icon: "sparkles",
+                        iconColor: .orange,
+                        title: "Feiertage",
+                        value: Text(String(viewModel.publicHolidayCount(in: selectedYear))),
+                        infoText: "Alle gesetzlichen Feiertage des Jahres."
+                    )
+                    StatisticCard(
+                        icon: "person.2.fill",
+                        iconColor: .green,
+                        title: "Betreuungszeit (inkl. Zusatz-Freie Tage)",
+                        value: Text("\(viewModel.schoolFreeDaysFromHolidayView(in: selectedYear) + viewModel.totalAdditionalChildFreeDays(in: selectedYear))"),
+                        infoText: "Ferien-Werktage plus zusätzliche freie Kindertage, die nicht auf Werktage oder Feiertage fallen."
+                    )
+                    StatisticCard(
+                        icon: "percent",
+                        iconColor: quoteColor(betreuungsquote(selectedYear)),
+                        title: "Betreuungsquote",
+                        value: Text(String(format: "%.0f%%", betreuungsquote(selectedYear) * 100))
+                            .font(.title.bold())
+                            .foregroundColor(quoteColor(betreuungsquote(selectedYear))),
+                        infoText: "Anteil der durch Eltern abgedeckten Werktage während der Schulferien (Mo–Fr, ohne Feiertage)."
+                    )
                 }
-                // --- SCHÖNER Statistik-Block ---
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Jahr: " + String(selectedYear))
+            }
+            .padding(.vertical, 8)
+            .background(Color(.systemGray6).opacity(colorScheme == .dark ? 0.3 : 1.0))
+            .cornerRadius(16)
+            // --- Eltern & Betreuungszeit ---
+            ParentListView(
+                parents: sortedParents,
+                selectedYear: selectedYear,
+                viewModel: viewModel
+            )
+            .padding()
+            .background(Color(.systemGray5))
+            .cornerRadius(14)
+            .padding(.top, 24)
+            // --- Kalenderübersicht Button ---
+            Button(action: {
+                showCalendarOverview = true
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "calendar")
                         .font(.title2)
-                        .foregroundColor(.secondary)
-                        .padding(.leading, 4)
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 16) {
-                        StatisticCard(
-                            icon: "briefcase",
-                            iconColor: .blue,
-                            title: "Werktage (Mo-Fr)",
-                            value: Text("\(viewModel.anzahlWerktageImJahr(selectedYear))"),
-                            infoText: "Gesamtanzahl der Werktage (Mo-Fr, ohne Wochenenden und Feiertage) im Jahr."
-                        )
-                        StatisticCard(
-                            icon: "sparkles",
-                            iconColor: .orange,
-                            title: "Feiertage",
-                            value: Text(String(viewModel.publicHolidayCount(in: selectedYear))),
-                            infoText: "Alle gesetzlichen Feiertage des Jahres."
-                        )
-                        StatisticCard(
-                            icon: "person.2.fill",
-                            iconColor: .green,
-                            title: "Betreuungszeit (inkl. Zusatz-Freie Tage)",
-                            value: Text("\(viewModel.schoolFreeDaysFromHolidayView(in: selectedYear) + viewModel.totalAdditionalChildFreeDays(in: selectedYear))"),
-                            infoText: "Ferien-Werktage plus zusätzliche freie Kindertage, die nicht auf Werktage oder Feiertage fallen."
-                        )
-                        StatisticCard(
-                            icon: "percent",
-                            iconColor: quoteColor(betreuungsquote(selectedYear)),
-                            title: "Betreuungsquote",
-                            value: Text(String(format: "%.0f%%", betreuungsquote(selectedYear) * 100))
-                                .font(.title.bold())
-                                .foregroundColor(quoteColor(betreuungsquote(selectedYear))),
-                            infoText: "Anteil der durch Eltern abgedeckten Werktage während der Schulferien (Mo–Fr, ohne Feiertage)."
-                        )
-                    }
+                    Text("Kalenderübersicht")
+                        .font(.title2.bold())
+                        .padding(.vertical, 16)
                 }
-                .padding(.vertical, 8)
-                .background(Color(.systemGray6).opacity(colorScheme == .dark ? 0.3 : 1.0))
-                .cornerRadius(16)
-                // --- ENDE SCHÖNER Statistik-Block ---
-                // --- ELTERN & BETREUUNGSZEIT ---
-                ParentListView(
-                    parents: sortedParents,
-                    selectedYear: selectedYear,
-                    viewModel: viewModel
-                )
-                .padding()
-                .background(Color(.systemGray5))
-                .cornerRadius(14)
-                .padding(.top, 24)
-                // --- Neuer Button unter Eltern-Block ---
-                Button(action: {
-                    showCalendarOverview = true
-                }) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "calendar")
-                            .font(.title2)
-                        Text("Kalenderübersicht")
-                            .font(.title2.bold())
-                            .padding(.vertical, 16)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal)
-                .background(Color.accentColor.opacity(0.22))
-                .cornerRadius(16)
-                .padding(.top, 28)
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal)
+            .background(Color.accentColor.opacity(0.22))
+            .cornerRadius(16)
+            .padding(.top, 28)
+        }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                dashboardContent
             }
             .padding()
-            .sheet(isPresented: $showCalendarOverview) {
-                CalendarOverviewView(viewModel: viewModel)
-            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .background(Color(.systemGroupedBackground))
+        .sheet(isPresented: $showCalendarOverview) {
+            CalendarOverviewView(viewModel: viewModel)
         }
     }
     
@@ -120,6 +128,8 @@ struct DashboardView: View {
         return Color(hue: hue, saturation: 0.8, brightness: 0.95)
     }
 }
+
+// Removed duplicate ipadStyled extension. Use the one in VacationView.swift or a central place.
 
 // Neue View für die Elternliste
 struct ParentListView: View {
@@ -226,14 +236,19 @@ extension DashboardView {
         let calendar = Calendar.current
         // Alle betreuungspflichtigen Werktage während Schulferien (Mo-Fr, ohne Feiertage)
         let schoolHolidayDays = viewModel.schoolHolidays.flatMap { holiday -> [Date] in
-            guard let start = holiday.startDateObject, let end = holiday.endDateObject else { return [] }
+            let start = holiday.startDateObject
+            let end = holiday.endDateObject
+            // Optional: Prüfe auf Fallback-Werte
+            // if start == Date.distantPast || end == Date.distantFuture { return [] }
             var days: [Date] = []
             var current = max(start, calendar.date(from: DateComponents(year: year, month: 1, day: 1))!)
             let endDate = min(end, calendar.date(from: DateComponents(year: year, month: 12, day: 31))!)
             while current <= endDate {
                 let weekday = calendar.component(.weekday, from: current)
                 let isFeiertag = viewModel.publicHolidays.contains { ph in
-                    guard let phDate = ph.startDateObject else { return false }
+                    let phDate = ph.startDateObject
+                    // Optional: Prüfe auf Fallback-Werte
+                    // if phDate == Date.distantPast { return false }
                     return calendar.isDate(phDate, inSameDayAs: current)
                 }
                 if weekday != 1 && weekday != 7 && !isFeiertag {
@@ -254,8 +269,8 @@ extension DashboardView {
             }
         })
         // Debug-Ausgabe:
-        print("[DEBUG] alleFerienWerktage: \(alleFerienWerktage.sorted())")
-        print("[DEBUG] abgedeckteTage: \(abgedeckteTage.sorted())")
+        // print("[DEBUG] alleFerienWerktage: \(alleFerienWerktage.sorted())")
+        // print("[DEBUG] abgedeckteTage: \(abgedeckteTage.sorted())")
         guard !alleFerienWerktage.isEmpty else { return 0 }
         return Double(abgedeckteTage.count) / Double(alleFerienWerktage.count)
     }

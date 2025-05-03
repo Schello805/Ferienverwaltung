@@ -9,6 +9,14 @@ class NotificationService {
     static let shared = NotificationService()
     private init() {}
     
+    // Zentraler DateFormatter für Benachrichtigungen
+    private static let longDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.locale = Locale(identifier: "de_DE")
+        return formatter
+    }()
+    
     func getKeyWindow() -> UIWindow? {
         // iOS 15+: Alle aktiven WindowScenes durchsuchen
         if #available(iOS 15.0, *) {
@@ -37,10 +45,10 @@ class NotificationService {
             for offset in notifyOffsets {
                 if let notifyDate = calendar.date(byAdding: .day, value: -offset, to: date), notifyDate > Date() {
                     let content = UNMutableNotificationContent()
-                    let formatter = DateFormatter()
-                    formatter.dateStyle = .long
+                    // DateFormatter NICHT mehr in der Schleife erzeugen!
+                    let formatter = Self.longDateFormatter
                     content.title = "Unbetreuter Ferientag"
-                    content.body = offset == 28 ? "In 4 Wochen ist am \(formatter.string(from: date)) ein unbetreuter Ferientag! Jetzt Betreuung organisieren." : "In 1 Woche ist am \(formatter.string(from: date)) ein unbetreuter Ferientag!"
+                    content.body = "Am \(formatter.string(from: date)) ist ein Ferientag ohne Betreuung geplant. Bitte kümmere dich rechtzeitig um eine Betreuung."
                     content.sound = .default
                     let triggerDate = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: notifyDate)
                     let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
@@ -53,12 +61,9 @@ class NotificationService {
     
     // Test-Benachrichtigung für die Einstellungen
     func sendTestNotification(completion: ((String?) -> Void)? = nil) {
-        print("[NotificationService] sendTestNotification aufgerufen")
         requestAuthorization { granted in
-            print("[NotificationService] requestAuthorization completion: granted=\(granted)")
             guard granted else {
                 let msg = "Push-Benachrichtigungen sind nicht erlaubt. Bitte in den iOS-Einstellungen aktivieren."
-                print("[NotificationService] " + msg)
                 DispatchQueue.main.async {
                     if let topController = self.getKeyWindow()?.rootViewController {
                         let alert = UIAlertController(title: "Fehler", message: msg, preferredStyle: .alert)
@@ -80,7 +85,6 @@ class NotificationService {
             center.add(request) { error in
                 if let error = error {
                     let msg = "Fehler beim Senden der Test-Benachrichtigung: \(error.localizedDescription)"
-                    print("[NotificationService] " + msg)
                     DispatchQueue.main.async {
                         if let topController = self.getKeyWindow()?.rootViewController {
                             let alert = UIAlertController(title: "Fehler", message: msg, preferredStyle: .alert)
@@ -90,7 +94,6 @@ class NotificationService {
                     }
                     completion?(msg)
                 } else {
-                    print("[NotificationService] Test-Benachrichtigung wurde erfolgreich hinzugefügt")
                     // --- FOREGROUND-WORKAROUND: Zeige Hinweis als Alert, wenn App im Vordergrund ist ---
                     DispatchQueue.main.async {
                         if let topController = self.getKeyWindow()?.rootViewController {

@@ -60,7 +60,7 @@ struct AddChildSheet: View {
                     Section(header: Text("Geburtsdatum")) {
                         HStack {
                             if let date = birthdate {
-                                Text(date, style: .date)
+                                Text(dateFormatter.string(from: date))
                                 Spacer()
                                 Button("Ändern") { showDatePicker = true }
                             } else {
